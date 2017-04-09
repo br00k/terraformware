@@ -1,0 +1,75 @@
+#
+# username and password can be define setting the following environment variables:
+#
+# export VSPHERE_USER="my_user"
+# export VSPHERE_PASSWORD="my_password"
+#
+# Configure the VMware vSphere Provider
+provider "vsphere" {
+  vsphere_server       = "${var.common["vsphere_server"]}"
+  allow_unverified_ssl = "true"
+}
+
+# Create a folder
+resource "vsphere_folder" "${var.common["folder"]}" {
+  datacenter = "${var.common["datacenter"]}"
+  path       = "${var.common["folder"]}"
+}
+
+# Create a file
+#resource "vsphere_file" "ubuntu_disk" {
+#  datacenter       = "${var.common["datacenter"]}"
+#  datastore        = ${var.common["datastore"]}
+#  source_file      = "template_test1/template_test1.vmdk"
+#  destination_file = ${var.common["folder"]}/tf_test.vmdk"
+#}
+
+# Create a disk image
+#resource "vsphere_virtual_disk" "extraStorage" {
+#  size       = 2
+#  vmdk_path  = "${var.common["folder"]}/testDisk.vmdk"
+#  datacenter = "${var.common["datacenter"]}"
+#  datastore  = ${var.common["datastore"]}
+#}
+
+# Create a virtual machine within the folder
+{% for count in range(instances|int) -%}
+resource "vsphere_virtual_machine" "${var.{{ count }}["hostname"]}" {
+  name        = "${var.{{ count }}["hostname"]}"
+  datacenter  = "${var.common["datacenter"]}"
+  folder      = "${var.common["folder"]}"
+  vcpu        = "${var.{{ count }}["vcpu"]}"
+  memory      = "${var.{{ count }}["memory"]}"
+  dns_servers = "${var.dns_servers}"
+  domain      = "${var.{{ count }}["domain"]}"
+
+  network_interface {
+    label              = "${var.{{ count }}["label"]}"
+    ipv4_address       = "${var.{{ count }}["ipv4_address"]}"
+    ipv4_gateway       = "${var.{{ count }}["ipv4_gateway"]}"
+    ipv4_prefix_length = "${var.{{ count }}["ipv4_prefix_length"]}"
+    ipv6_address       = "${var.{{ count }}["ipv6_address"]}"
+    ipv6_gateway       = "${var.{{ count }}["ipv6_gateway"]}"
+    ipv6_prefix_length = "${var.{{ count }}["ipv6_prefix_length"]}"
+  }
+
+  #network_interface {
+  #  label   .... (2nd network interface)
+  #}
+
+  disk {
+    datastore = "${var.common["datastore"]}"
+    template  = "${var.common["template"]}"
+  }
+
+  #provisioner "remote-exec" {
+  #  inline = [
+  #    "/bin/sed -i s,PUPPETSERVER,${var.common["puppet_server"]}, ${var.common["puppet_conf"]}",
+  #    "/bin/sed -i s,PUPPETCA,${var.puppet_ca}, ${var.common["puppet_conf"]}",
+  #    "/bin/sed -i s,PUPPETENVIRONMENT,${var.puppet_environment}, ${var.common["puppet_conf"]}",
+  #  ]
+  #}
+
+}
+
+{% endfor %}

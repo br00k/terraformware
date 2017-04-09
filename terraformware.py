@@ -12,20 +12,31 @@ import json
 import argparse
 import ConfigParser
 import hcl
-from infoblox_client import connector
-from infoblox_client import objects
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from python_terraform import Terraform
+from infoblox_client import connector
+# from infoblox_client import objects
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+CRED_CONF = os.path.join(os.environ['HOME'], '.tf_credentials.conf')
+TF_RC_CONF = os.path.join(os.environ['HOME'], '.terraformrc')
+
+TF_RC_CONTENT = """# Infoblox provider\n#
+# download URL: https://github.com/prudhvitella/terraform-provider-infoblox/releases/
+#
+providers {
+  infoblox = "/path/to/terraform-provider-infoblox"
+}\n
+"""
 
 CRED_FILE_CONTENT = """[tf_credentials]\n
 # Vcenter/Infoblox username (AD user) <string>: your_username
 username = your_username\n
 # Vcenter/Infoblox password (AD password) <string>: your_password
 password = your_secret_pass_here\n
-# Infoblox server <string>: infblox fqdn
+# Infoblox server <string>: infblox server fqdn
 iblox_server = infoblox.win.dante.org.uk\n
 # Consul server <string>: consul server fqdn
 consul_server = puppet01.geant.net\n
@@ -43,17 +54,16 @@ def parse():
     return parser.parse_args()
 
 
-def load_variables(filenames):
+def load_variables(filenames, terrafile='./variables.tf'):
     """load terraform variables"""
 
     variables = {}
 
-    for terrafile in glob.glob('./*.tf'):
-        with open(terrafile) as data_fh:
-            data = hcl.load(data_fh)
-            for key, value in data.get('variable', {}).iteritems():
-                if 'default' in value:
-                    variables.update({key: value['default']})
+    with open(terrafile) as data_fh:
+        data = hcl.load(data_fh)
+        for key, value in data.get('variable', {}).iteritems():
+            if 'default' in value:
+                variables.update({key: value['default']})
 
     for varfile in filenames:
         with open(varfile) as var_fh:
@@ -75,29 +85,36 @@ def render(j2_template, j2_context):
 def terraform_apply(username, password):
     """run terraform"""
 
-    tform = Terraform(working_dir='.')
-    tform.apply(refresh=False, var={
-        'VSPHERE_USER': username,
-        'VSPHERE_PASSWORD': password
-        })
+    tf_vars = {
+        'vsphere_user': username,
+        'vsphere_password': password,
+        'iblox_user': username,
+        'iblox_password': password
+        }
+    tform = Terraform()
+    os.environ["TF_VAR_vsphere_user"] = username
+    os.environ["TF_VAR_vsphere_password"] = password
+    os.environ["TF_VAR_iblox_user"] = username
+    os.environ["TF_VAR_iblox_password"] = password
+
+    print tf_vars
+    tform.apply('./', refresh=False, var=tf_vars)
 
 
 class Iblox(object):
     """manage infoblox entries"""
     config = ConfigParser.RawConfigParser()
-    config.readfp(open(CRED_CONF))
-    user = CONFIG.get('tf_credentials', 'username')
-    password = CONFIG.get('tf_credentials', 'password')
-    server = CONFIG.get('tf_credentials', 'iblox_server')
 
-    def __init__(self, record, ipv4, ipv6):
+    def __init__(self, record, ipv4, ipv6, config=config):
         self.record = record
         self.ipv4 = ipv4
         self.ipv6 = ipv6
+        self.config = config
+        self.config.readfp(open(CRED_CONF))
         self.opts = {
-            'host': self.server,
-            'username': self.user,
-            'password': self.password
+            'host': self.config.get('tf_credentials', 'iblox_server'),
+            'username': self.config.get('tf_credentials', 'username'),
+            'password': self.config.get('tf_credentials', 'password')
             }
         self.conn = connector.Connector(self.opts)
 
@@ -157,7 +174,8 @@ class Iblox(object):
 
 if __name__ == '__main__':
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-    CRED_CONF = os.path.join(os.environ['HOME'], '.tf_credentials.conf')
+    template = './terraformware.j2'
+    rendered_filename = 'main.tf'
 
     if os.access(CRED_CONF, os.W_OK):
         CONFIG = ConfigParser.RawConfigParser()
@@ -169,11 +187,19 @@ if __name__ == '__main__':
         CRED_FILE = open(CRED_CONF, 'w+')
         CRED_FILE.write(CRED_FILE_CONTENT)
         CRED_FILE.close()
-        print "the file {0} has been created".format(CRED_CONF)
-        print "fill in proper values and run the script again"
+        print "\nThe following file has been created: {0}\n".format(CRED_CONF)
+        print "Fill it with proper values and run the script again\n"
         os.sys.exit()
 
-    if not os.access('./main.j2', os.R_OK):
+    if not os.access(TF_RC_CONF, os.W_OK):
+        TF_FILE = open(TF_RC_CONF, 'w+')
+        TF_FILE.write(TF_RC_CONTENT)
+        TF_FILE.close()
+        print "\nThe following file has been created: {0}\n".format(TF_RC_CONF)
+        print "Fill it with proper values and run the script again\n"
+        os.sys.exit()
+
+    if not os.access(template, os.R_OK):
         print 'please run the script from terraform directory'
         os.sys.exit()
 
@@ -183,23 +209,19 @@ if __name__ == '__main__':
     CONTEXT = load_variables(ARGS.vfile)
     if ARGS.showvars:
         print json.dumps(CONTEXT, indent=2)
-        print CONTEXT
 
-    for template in glob.glob('./*.j2'):
-        rendered_filename = '{}.tf'.format(os.path.splitext(template)[0])
-        if ARGS.test:
-            print render(template, CONTEXT)
-        else:
-            with open(rendered_filename, 'w') as fh:
-                fh.write(render(template, CONTEXT))
-            iblox_vars = ast.literal_eval(json.dumps(CONTEXT))
-            INSTANCES = iblox_vars['instances']
-            for virtual_machine in range(1, int(INSTANCES) + 1):
-                ipv4_address = iblox_vars[str(virtual_machine)]['ipv4_address']
-                ipv6_address = iblox_vars[str(virtual_machine)]['ipv6_address']
-                host_name = iblox_vars[str(virtual_machine)]['hostname']
-                print host_name
-                Iblox(host_name, ipv4_address, ipv6_address).rebuild()
+    if ARGS.test:
+        print render(template, CONTEXT)
+    else:
+        with open(rendered_filename, 'w') as fh:
+            fh.write(render(template, CONTEXT))
+        iblox_vars = ast.literal_eval(json.dumps(CONTEXT))
+        INSTANCES = iblox_vars['instances']
 
-            # iblox(args.vfile)
-            # terraform_apply(USERNAME, PASSWORD)
+        for virtual_machine in range(1, int(INSTANCES) + 1):
+            ipv4_address = iblox_vars[str(virtual_machine)]['ipv4_address']
+            ipv6_address = iblox_vars[str(virtual_machine)]['ipv6_address']
+            host_name = iblox_vars[str(virtual_machine)]['hostname']
+            Iblox(host_name, ipv4_address, ipv6_address).rebuild()
+
+        terraform_apply(USERNAME, PASSWORD)

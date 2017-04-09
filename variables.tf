@@ -1,28 +1,74 @@
-#variable "public_key_path" {
-#  description = <<DESCRIPTION
-#Path to the SSH public key to be used for authentication.
-#Ensure this keypair is added to your local SSH agent so provisioners can
-#connect.
+# Variables
+#
+variable "instances" {
+  default = "3"
+}
 
-#Example: ~/.ssh/terraform.pub
-#DESCRIPTION
-#}
+variable "common" {
+  type = "map"
+  default = {
+    vsphere_server = "chvc01.win.dante.org.uk"
+    vsphere_folder = "terraform"
+    datacenter = "CityHouse"
+    datastore = "datastore1"
+    puppet_server = "puppet01.geant.net"
+    puppet_ca = "puppet01.geant.net"
+    puppet_conf = "/etc/puppetlabs/puppet/puppet.conf"
+    template = "packer-centos-6"
+  }
+}
 
-#variable "key_name" {
-#  description = "Desired name of AWS key pair"
-#}
+variable "dns_servers" {
+  type = "list"
+  default = ["62.40.119.100", "62.40.120.134"]
+}
 
-#variable "aws_region" {
-#  description = "AWS region to launch servers."
-#  default     = "us-west-2"
-#}
+variable "1" {
+  type = "map"
+  default = {
+    hostname = "test-poller01.geant.net"
+    domain = "geant.net"
+    net_label = "GEANT"
+    ipv4_address = "192.168.1.200"
+    ipv4_gateway = "192.168.1.1"
+    ipv4_prefix_length = "24"
+    ipv6_address = "fe80::8946:1ea3:9bd4:2787"
+    ipv6_gateway = "fe80::"
+    ipv6_prefix_length = "64"
+    puppet_environment = "test"
+    memory = "8192"
+    vcpu = "2"
+  }
+}
 
-## Ubuntu Precise 12.04 LTS (x64)
-#variable "aws_amis" {
-#  default = {
-#    eu-west-1 = "ami-b1cf19c6"
-#    us-east-1 = "ami-de7ab6b6"
-#    us-west-1 = "ami-3f75767a"
-#    us-west-2 = "ami-21f78e11"
-#  }
-#}
+variable "2" {
+  type = "map"
+  default = {
+    hostname = "uat-poller01.geant.net"
+    domain = "geant.net"
+    net_label = "GEANT"
+    ipv4_address = "192.168.1.201"
+    ipv4_gateway = "192.168.1.1"
+    ipv4_prefix_length = "24"
+    ipv6_address = "fe80::8946:1ea3:9bd4:2788"
+    ipv6_gateway = "fe80::"
+    ipv6_prefix_length = "64"
+    puppet_environment = "uat"
+  }
+}
+
+variable "3" {
+  type = "map"
+  default = {
+    hostname = "prod-poller01.geant.net"
+    domain = "geant.net"
+    net_label = "GEANT"
+    ipv4_address = "192.168.1.202"
+    ipv4_gateway = "192.168.1.1"
+    ipv4_prefix_length = "24"
+    ipv6_address = "fe80::8946:1ea3:9bd4:2789"
+    ipv6_gateway = "fe80::"
+    ipv6_prefix_length = "64"
+    puppet_environment = "production"
+  }
+}
