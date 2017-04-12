@@ -1,9 +1,14 @@
 #!/usr/bin/python
 #
-""" requirements through pip:
+"""
+  requirements through pip:
     - pyhcl
     - infoblox-client
     - python-terraform
+    - ast, requests, configparser, jinja2, argparse, json
+  TODO:
+    - add External/Internal view for Infoblox (now we've hardcoded External)
+    - add some progress and time for terraform execution
 """
 import os
 import ast
@@ -60,6 +65,14 @@ def parse():
     return parser.parse_args()
 
 
+def byebye(status=0):
+    """remove main.tf"""
+
+    if os.access('./main.tf', os.W_OK):
+        os.remove('./main.tf')
+    os.sys.exit(status)
+
+
 def load_variables(filenames, terrafile='./variables.tf'):
     """load terraform variables"""
 
@@ -82,15 +95,10 @@ def load_variables(filenames, terrafile='./variables.tf'):
 def render(j2_template, j2_context):
     """render jinja templates"""
 
+    global module_dir
+    module_dir = os.path.basename(os.getcwd())
     config = ConfigParser.RawConfigParser()
     config.readfp(open(CRED_CONF))
-    vsphere_username = config.get('terraformware', 'vsphere_username')
-    vsphere_password = config.get('terraformware', 'vsphere_password')
-    iblox_username = config.get('terraformware', 'iblox_username')
-    iblox_password = config.get('terraformware', 'iblox_password')
-    consul_token = config.get('terraformware', 'consul_token')
-    consul_server = config.get('terraformware', 'consul_server')
-    iblox_server = config.get('terraformware', 'iblox_server')
 
     def custom_dictionary(arg_key, arg_sub_key):
         """return dict value"""
@@ -100,11 +108,16 @@ def render(j2_template, j2_context):
         """return variable"""
         return config.get('terraformware', arg_var)
 
+    def custom_locals(args_global):
+        """ return variable defined in the script"""
+        return globals()[args_global]
+
     with open(j2_template, 'r') as my_template:
         template = my_template.read()
     jinja_template = Template(template)
     jinja_template.globals['custom_dictionary'] = custom_dictionary
     jinja_template.globals['custom_variable'] = custom_variable
+    jinja_template.globals['custom_locals'] = custom_locals
 
     return jinja_template.render(**j2_context)
 
@@ -112,6 +125,8 @@ def render(j2_template, j2_context):
 def terraform_apply(work_dir='.'):
     """run terraform"""
 
+    print "running terraform... (takes a while)"
+    os.sys.exit()
     tform = Terraform(working_dir=work_dir)
     tform.apply(refresh=False)
 
@@ -169,17 +184,21 @@ class Iblox(object):
              - update_if_exists does not work as expected
              - we need to destroy and create the entry again
         """
-
         host_entry = self.query_host()
         a_entry = self.query_a()
         aaaa_entry = self.query_aaaa()
 
         if host_entry:
             self.conn.delete_object(host_entry['_ref'])
+            print "destroyed host record {}".format(self.record)
         if a_entry:
             self.conn.delete_object(a_entry['_ref'])
+            print "destroyed A Record for {} with IP {}".format(
+                self.record, self.ipv4)
         if aaaa_entry:
             self.conn.delete_object(aaaa_entry['_ref'])
+            print "destroyed AAAA record {} with IPv6 {}".format(
+                self.record, self.ipv6)
 
         try:
             objects.ARecord.create(self.conn, view='External',
@@ -187,18 +206,25 @@ class Iblox(object):
         except Exception as err:
             print "couldn't create A Record for {} with IP {}: {}".format(
                 self.record, self.ipv4, err)
-            os.sys.exit(1)
+            byebye(1)
+        else:
+            print "created A Record {} with IP {}".format(self.record,self.ipv4)
 
         try:
             objects.AAAARecord.create(self.conn, view='External',
                                       name=self.record, ip=self.ipv6)
         except Exception as err:
-            print "couldn't create AAAA Record for {} with IPv6 {}: {}".format(
+            print "couldn't create AAAA Record {} with IPv6 {}: {}".format(
                 self.record, self.ipv6, err)
-            os.sys.exit(1)
+            byebye(1)
+        else:
+            print "created AAAA Record {} with IP {}".format(self.record, self.ipv6)
+
+        print '='*80
 
 
 if __name__ == '__main__':
+    print '='*80
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
     TEMPLATE = './terraformware.j2'
     RENDERED_FNAME = 'main.tf'
@@ -209,7 +235,7 @@ if __name__ == '__main__':
         CRED_FILE.close()
         print "\nThe following file has been created: {0}\n".format(CRED_CONF)
         print "Fill it with proper values and run the script again\n"
-        os.sys.exit()
+        byebye(1)
 
     if not os.access(TF_RC_CONF, os.W_OK):
         TF_FILE = open(TF_RC_CONF, 'w+')
@@ -217,11 +243,11 @@ if __name__ == '__main__':
         TF_FILE.close()
         print "\nThe following file has been created: {0}\n".format(TF_RC_CONF)
         print "Fill it with proper values and run the script again\n"
-        os.sys.exit()
+        byebye(1)
 
     if not os.access(TEMPLATE, os.R_OK):
         print 'please run the script from terraform directory'
-        os.sys.exit()
+        byebye(1)
 
     ARGS = parse()
 
@@ -246,3 +272,5 @@ if __name__ == '__main__':
             Iblox(host_name, ipv4_address, ipv6_address).rebuild()
 
         terraform_apply()
+
+    byebye()

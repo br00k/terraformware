@@ -8,7 +8,6 @@ variable "common" {
   type = "map"
   default = {
     vsphere_server = "chvc01.win.dante.org.uk"
-    vsphere_folder = "terraform"
     datacenter = "CityHouse"
     datastore = "datastore1"
     puppet_server = "puppet01.geant.net"

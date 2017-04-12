@@ -8,7 +8,7 @@ data "terraform_remote_state" "terraform" {
     address      = "{{ custom_variable('consul_server') }}"
     access_token = "{{ custom_variable('consul_token') }}"
     scheme       = "http"
-    path         = "{{ custom_variable('module_dir') }}"
+    path         = "{{ custom_locals('module_dir') }}"
     lock         = "true"
   }
 }
@@ -31,10 +31,10 @@ provider "vsphere" {
     allow_unverified_ssl = "true"
 }
 
-# Create a folder
-resource "vsphere_folder" "{{ custom_variable('module_dir') }}" {
+# Create folder "{{ custom_locals('module_dir') }}"
+resource "vsphere_folder" "{{ custom_locals('module_dir') }}" {
     datacenter = "${var.common["datacenter"]}"
-    path       = "{{ custom_variable('module_dir') }}"
+    path       = "{{ custom_locals('module_dir') }}"
 }
 
 {% for count in range(instances|int) -%}
@@ -59,11 +59,11 @@ resource "infoblox_record" "{{ custom_dictionary(instance, 'hostname') }}_AAAA" 
 }
 */
 
-# Create virtual machine {{ custom_dictionary(instance, 'hostname') }} within the folder
+# Create virtual machine {{ custom_dictionary(instance, 'hostname') }} within the folder {{ custom_locals('module_dir') }}
 resource "vsphere_virtual_machine" "{{ custom_dictionary(instance, 'hostname') }}" {
     name        = "${var.{{ instance }}["hostname"]}"
     datacenter  = "${var.common["datacenter"]}"
-    folder      = "${var.common["vsphere_folder"]}"
+    folder      = "{{ custom_locals('module_dir') }}"
     vcpu        = "${var.{{ instance }}["vcpu"]}"
     memory      = "${var.{{ instance }}["memory"]}"
     dns_servers = "${var.dns_servers}"
