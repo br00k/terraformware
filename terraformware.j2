@@ -1,84 +1,104 @@
 # Terraform Template (generated through Jinja template)
 #
 
+# set consul backend
+data "terraform_remote_state" "terraform" {
+  backend = "consul"
+  config {
+    address      = "{{ custom_variable('consul_server') }}"
+    access_token = "{{ custom_variable('consul_token') }}"
+    scheme       = "http"
+    path         = "{{ custom_variable('module_dir') }}"
+    lock         = "true"
+  }
+}
+
+/*
 # Configure Infoblox Provider
 provider "infoblox" {
-  username  = "${var.iblox_user}"
-  password  = "${var.iblox_password}"
-  host      = "{{ iblox_server }}"
-  sslverify = "false"
+    host      = "{{ custom_variable('iblox_server') }}"
+    username  = "{{ custom_variable('iblox_username') }}"
+    password  = "{{ custom_variable('iblox_password') }}"
+    sslverify = "false"
 }
+*/
 
 # Configure VMware vSphere Provider
 provider "vsphere" {
-  vsphere_server       = "${var.common["vsphere_server"]}"
-  user                 = "${var.vsphere_user}"
-  password             = "${var.vsphere_password}"
-  allow_unverified_ssl = "true"
+    vsphere_server       = "{{ custom_variable('vsphere_server') }}"
+    user                 = "{{ custom_variable('vsphere_username') }}"
+    password             = "{{ custom_variable('vsphere_password') }}"
+    allow_unverified_ssl = "true"
 }
 
 # Create a folder
-resource "vsphere_folder" "${var.common["folder"]}" {
-  datacenter = "${var.common["datacenter"]}"
-  path       = "${var.common["folder"]}"
+resource "vsphere_folder" "{{ custom_variable('module_dir') }}" {
+    datacenter = "${var.common["datacenter"]}"
+    path       = "{{ custom_variable('module_dir') }}"
 }
 
 {% for count in range(instances|int) -%}
-{% set instance = count + 1 -%}
-# Create A record on Infoblox
-resource "infoblox_record" "${lookup(var.{{ instance }}["hostname"])}_A" {
-	value = "${lookup(var.{{ instance }}["ipv4_address"])}"
-	name = "${element(split(".", lookup(var.{{ instance }}["hostname"])), 0)}"
-	domain = "${lookup(var.{{ instance }}["domain"])}"
-	type = "A"
-	ttl = 3600
+{% set instance = "_" ~ (count + 1)|string -%}
+/*
+# Create Infoblox A record for {{ custom_dictionary(instance, 'hostname') }}
+resource "infoblox_record" "{{ custom_dictionary(instance, 'hostname') }}_A" {
+    value = "${var.{{ instance }}["ipv4_address"]}"
+    name = "${element(split(".", var.{{ instance }}["hostname"]), 0)}"
+    domain = "${var.{{ instance }}["domain"]}"
+    type = "A"
+    ttl = 3600
 }
 
-# Create AAAA record on Infoblox
-resource "infoblox_record" "${lookup(var.{{ instance }}["hostname"])}_AAAA" {
-	value = "${lookup(var.{{ instance }}["ipv6_address"])}"
-	name = "${element(split(".", lookup(var.{{ instance }}["hostname"])), 0)}"
-	domain = "${lookup(var.{{ instance }}["domain"])}"
-	type = "AAAA"
-	ttl = 3600
+# Create Infoblox AAAA record for {{ custom_dictionary(instance, 'hostname') }}
+resource "infoblox_record" "{{ custom_dictionary(instance, 'hostname') }}_AAAA" {
+    value = "${var.{{ instance }}["ipv6_address"]}"
+    name = "${element(split(".", var.{{ instance }}["hostname"]), 0)}"
+    domain = "${var.{{ instance }}["domain"]}"
+    type = "AAAA"
+    ttl = 3600
 }
+*/
 
-# Create virtual machine within the folder
-resource "vsphere_virtual_machine" "${lookup(var.{{ instance }}["hostname"])}" {
-  name        = "${lookup(var.{{ instance }}["hostname"]}"
-  datacenter  = "${lookup(var.common["datacenter"]}"
-  folder      = "${lookup(var.common["folder"]}"
-  vcpu        = "${lookup(var.{{ instance }}["vcpu"]}"
-  memory      = "${lookup(var.{{ instance }}["memory"]}"
-  dns_servers = "${lookup(var.dns_servers})"
-  domain      = "${var.{{ instance }}["domain"]}"
+# Create virtual machine {{ custom_dictionary(instance, 'hostname') }} within the folder
+resource "vsphere_virtual_machine" "{{ custom_dictionary(instance, 'hostname') }}" {
+    name        = "${var.{{ instance }}["hostname"]}"
+    datacenter  = "${var.common["datacenter"]}"
+    folder      = "${var.common["vsphere_folder"]}"
+    vcpu        = "${var.{{ instance }}["vcpu"]}"
+    memory      = "${var.{{ instance }}["memory"]}"
+    dns_servers = "${var.dns_servers}"
+    domain      = "${var.{{ instance }}["domain"]}"
 
-  network_interface {
-    label              = "${lookup(var.{{ instance }}["label"]})"
-    ipv4_address       = "${var.{{ instance }}["ipv4_address"]}"
-    ipv4_gateway       = "${var.{{ instance }}["ipv4_gateway"]}"
-    ipv4_prefix_length = "${var.{{ instance }}["ipv4_prefix_length"]}"
-    ipv6_address       = "${var.{{ instance }}["ipv6_address"]}"
-    ipv6_gateway       = "${var.{{ instance }}["ipv6_gateway"]}"
-    ipv6_prefix_length = "${var.{{ instance }}["ipv6_prefix_length"]}"
-  }
+    network_interface {
+        label              = "${var.{{ instance }}["net_label"]}"
+        ipv4_address       = "${var.{{ instance }}["ipv4_address"]}"
+        ipv4_gateway       = "${var.{{ instance }}["ipv4_gateway"]}"
+        ipv4_prefix_length = "${var.{{ instance }}["ipv4_prefix_length"]}"
+        ipv6_address       = "${var.{{ instance }}["ipv6_address"]}"
+        ipv6_gateway       = "${var.{{ instance }}["ipv6_gateway"]}"
+        ipv6_prefix_length = "${var.{{ instance }}["ipv6_prefix_length"]}"
+    }
 
-  #network_interface {
-  #  label   .... (2nd network interface)
-  #}
+    /*
+    network_interface {
+        label   .... (2nd network interface)
+    }
+    */
 
-  disk {
-    datastore = "${var.common["datastore"]}"
-    template  = "${var.common["template"]}"
-  }
+    disk {
+        datastore = "${var.common["datastore"]}"
+        template  = "${var.common["template"]}"
+    }
 
-  #provisioner "remote-exec" {
-  #  inline = [
-  #    "/bin/sed -i s,PUPPETSERVER,${var.common["puppet_server"]}, ${var.common["puppet_conf"]}",
-  #    "/bin/sed -i s,PUPPETCA,${var.puppet_ca}, ${var.common["puppet_conf"]}",
-  #    "/bin/sed -i s,PUPPETENVIRONMENT,${var.puppet_environment}, ${var.common["puppet_conf"]}",
-  #  ]
-  #}
+    /*
+    provisioner "remote-exec" {
+        inline = [
+          "/bin/sed -i s,PUPPETSERVER,${var.common["puppet_server"]}, ${var.common["puppet_conf"]}",
+          "/bin/sed -i s,PUPPETCA,${var.puppet_ca}, ${var.common["puppet_conf"]}",
+          "/bin/sed -i s,PUPPETENVIRONMENT,${var.puppet_environment}, ${var.common["puppet_conf"]}",
+        ]
+    }
+    */
 
 }
 

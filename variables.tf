@@ -23,10 +23,10 @@ variable "dns_servers" {
   default = ["62.40.119.100", "62.40.120.134"]
 }
 
-variable "1" {
+variable "_1" {
   type = "map"
   default = {
-    hostname = "test-poller01.geant.net"
+    hostname = "test-terraform01.geant.net"
     domain = "geant.net"
     net_label = "GEANT"
     ipv4_address = "192.168.1.200"
@@ -41,10 +41,10 @@ variable "1" {
   }
 }
 
-variable "2" {
+variable "_2" {
   type = "map"
   default = {
-    hostname = "uat-poller01.geant.net"
+    hostname = "uat-terraform01.geant.net"
     domain = "geant.net"
     net_label = "GEANT"
     ipv4_address = "192.168.1.201"
@@ -54,13 +54,15 @@ variable "2" {
     ipv6_gateway = "fe80::"
     ipv6_prefix_length = "64"
     puppet_environment = "uat"
+    memory = "8192"
+    vcpu = "2"
   }
 }
 
-variable "3" {
+variable "_3" {
   type = "map"
   default = {
-    hostname = "prod-poller01.geant.net"
+    hostname = "prod-terraform01.geant.net"
     domain = "geant.net"
     net_label = "GEANT"
     ipv4_address = "192.168.1.202"
@@ -70,5 +72,7 @@ variable "3" {
     ipv6_gateway = "fe80::"
     ipv6_prefix_length = "64"
     puppet_environment = "production"
+    memory = "8192"
+    vcpu = "2"
   }
 }

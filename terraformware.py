@@ -7,20 +7,18 @@
 """
 import os
 import ast
-import glob
 import json
 import argparse
 import ConfigParser
 import hcl
-from jinja2 import Environment
-from jinja2 import FileSystemLoader
+from jinja2 import Template
 from python_terraform import Terraform
 from infoblox_client import connector
-# from infoblox_client import objects
+from infoblox_client import objects
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-CRED_CONF = os.path.join(os.environ['HOME'], '.tf_credentials.conf')
+CRED_CONF = os.path.join(os.environ['HOME'], '.terraformware.conf')
 TF_RC_CONF = os.path.join(os.environ['HOME'], '.terraformrc')
 
 TF_RC_CONTENT = """# Infoblox provider\n#
@@ -31,15 +29,23 @@ providers {
 }\n
 """
 
-CRED_FILE_CONTENT = """[tf_credentials]\n
-# Vcenter/Infoblox username (AD user) <string>: your_username
-username = your_username\n
-# Vcenter/Infoblox password (AD password) <string>: your_password
-password = your_secret_pass_here\n
+CRED_FILE_CONTENT = """[terraformware]\n
+# Vcenter username (AD user) <string>: your_username
+vsphere_username = your_username\n
+# Vcenter password (AD password) <string>: your_password
+vsphere_password = your_secret_pass_here\n
+# VSphere server
+vsphere_server = chvc01.win.dante.org.uk\n
+# Infoblox username <string>: your_username
+iblox_username = your_username\n
+# Infoblox password <string>: your_password
+iblox_password = your_secret_pass_here\n
 # Infoblox server <string>: infblox server fqdn
 iblox_server = infoblox.win.dante.org.uk\n
-# Consul server <string>: consul server fqdn
-consul_server = puppet01.geant.net\n
+# Consul server:port <string>: consul server fqdn:port
+consul_server = puppet01.geant.net:8500\n
+# Consul access token <string>: consul secret
+consul_token = xxxxxxxxxxx\n
 """
 
 
@@ -76,29 +82,38 @@ def load_variables(filenames, terrafile='./variables.tf'):
 def render(j2_template, j2_context):
     """render jinja templates"""
 
-    path, filename = os.path.split(j2_template)
-    return Environment(
-        loader=FileSystemLoader(path or './')
-    ).get_template(filename).render(j2_context)
+    config = ConfigParser.RawConfigParser()
+    config.readfp(open(CRED_CONF))
+    vsphere_username = config.get('terraformware', 'vsphere_username')
+    vsphere_password = config.get('terraformware', 'vsphere_password')
+    iblox_username = config.get('terraformware', 'iblox_username')
+    iblox_password = config.get('terraformware', 'iblox_password')
+    consul_token = config.get('terraformware', 'consul_token')
+    consul_server = config.get('terraformware', 'consul_server')
+    iblox_server = config.get('terraformware', 'iblox_server')
+
+    def custom_dictionary(arg_key, arg_sub_key):
+        """return dict value"""
+        return j2_context[arg_key][arg_sub_key].split('.')[0]
+
+    def custom_variable(arg_var):
+        """return variable"""
+        return config.get('terraformware', arg_var)
+
+    with open(j2_template, 'r') as my_template:
+        template = my_template.read()
+    jinja_template = Template(template)
+    jinja_template.globals['custom_dictionary'] = custom_dictionary
+    jinja_template.globals['custom_variable'] = custom_variable
+
+    return jinja_template.render(**j2_context)
 
 
-def terraform_apply(username, password):
+def terraform_apply(work_dir='.'):
     """run terraform"""
 
-    tf_vars = {
-        'vsphere_user': username,
-        'vsphere_password': password,
-        'iblox_user': username,
-        'iblox_password': password
-        }
-    tform = Terraform()
-    os.environ["TF_VAR_vsphere_user"] = username
-    os.environ["TF_VAR_vsphere_password"] = password
-    os.environ["TF_VAR_iblox_user"] = username
-    os.environ["TF_VAR_iblox_password"] = password
-
-    print tf_vars
-    tform.apply('./', refresh=False, var=tf_vars)
+    tform = Terraform(working_dir=work_dir)
+    tform.apply(refresh=False)
 
 
 class Iblox(object):
@@ -112,78 +127,83 @@ class Iblox(object):
         self.config = config
         self.config.readfp(open(CRED_CONF))
         self.opts = {
-            'host': self.config.get('tf_credentials', 'iblox_server'),
-            'username': self.config.get('tf_credentials', 'username'),
-            'password': self.config.get('tf_credentials', 'password')
+            'host': self.config.get('terraformware', 'iblox_server'),
+            'username': self.config.get('terraformware', 'iblox_username'),
+            'password': self.config.get('terraformware', 'iblox_password')
             }
         self.conn = connector.Connector(self.opts)
 
     def query_host(self):
         """query for host record"""
         try:
-            host_rec = self.conn.get_object(
-                'record:host', {'name': self.record})[0]
+            host_rec = self.conn.get_object('record:host', {'name': self.record})[0]
         except TypeError:
             return None
         else:
             return host_rec
 
-    # def query_a(self):
-    #     """query for A record"""
-    #     try:
-    #         a_rec = self.conn.get_object(
-    #             'record:a', {'name': self.record})[0]
-    #     except TypeError:
-    #         return None
-    #     else:
-    #         return a_rec
+    def query_a(self):
+        """query for A record"""
+        try:
+            a_rec = self.conn.get_object('record:a',
+                                         {'name': self.record})[0]
+        except TypeError:
+            return None
+        else:
+            return a_rec
 
-    # def query_aaaa(self):
-    #     """query for AAAA record"""
-    #     try:
-    #         aaaa_rec = self.conn.get_object(
-    #             'record:aaaa', {'name': self.record})[0]
-    #     except TypeError:
-    #         return None
-    #     else:
-    #         return aaaa_rec
+    def query_aaaa(self):
+        """query for AAAA record"""
+        try:
+            aaaa_rec = self.conn.get_object('record:aaaa',
+                                            {'name': self.record})[0]
+        except TypeError:
+            return None
+        else:
+            return aaaa_rec
 
     def rebuild(self):
-        """delete entry and create it again"""
+        """delete entry and create it again
+           couple of things:
+             - cannot get hostrecord ipv6 to work
+             - update_if_exists does not work as expected
+             - we need to destroy and create the entry again
+        """
 
         host_entry = self.query_host()
-        # a_entry = self.query_a()
-        # aaaa_entry = self.query_aaaa()
+        a_entry = self.query_a()
+        aaaa_entry = self.query_aaaa()
 
         if host_entry:
             self.conn.delete_object(host_entry['_ref'])
+        if a_entry:
+            self.conn.delete_object(a_entry['_ref'])
+        if aaaa_entry:
+            self.conn.delete_object(aaaa_entry['_ref'])
 
-        # the remaining part will be carried out by terraform.
-        # if a_entry:
-        #     self.conn.delete_object(a_entry['_ref'])
-        # if aaaa_entry:
-        #     self.conn.delete_object(aaaa_entry['_ref'])
-        # { "name":"wapi.test.org",
-        #   "ipv4addrs":[
-        #       {
-        #          "ipv4addr":"func:nextavailableip:10.1.1.0/24"
-        #       }
-        #     ]
-        # }
+        try:
+            objects.ARecord.create(self.conn, view='External',
+                                   name=self.record, ip=self.ipv4)
+        except Exception as err:
+            print "couldn't create A Record for {} with IP {}: {}".format(
+                self.record, self.ipv4, err)
+            os.sys.exit(1)
+
+        try:
+            objects.AAAARecord.create(self.conn, view='External',
+                                      name=self.record, ip=self.ipv6)
+        except Exception as err:
+            print "couldn't create AAAA Record for {} with IPv6 {}: {}".format(
+                self.record, self.ipv6, err)
+            os.sys.exit(1)
 
 
 if __name__ == '__main__':
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-    template = './terraformware.j2'
-    rendered_filename = 'main.tf'
+    TEMPLATE = './terraformware.j2'
+    RENDERED_FNAME = 'main.tf'
 
-    if os.access(CRED_CONF, os.W_OK):
-        CONFIG = ConfigParser.RawConfigParser()
-        CONFIG.readfp(open(CRED_CONF))
-        USERNAME = CONFIG.get('tf_credentials', 'username')
-        PASSWORD = CONFIG.get('tf_credentials', 'password')
-        IBLOX_SERVER = CONFIG.get('tf_credentials', 'iblox_server')
-    else:
+    if not os.access(CRED_CONF, os.W_OK):
         CRED_FILE = open(CRED_CONF, 'w+')
         CRED_FILE.write(CRED_FILE_CONTENT)
         CRED_FILE.close()
@@ -199,7 +219,7 @@ if __name__ == '__main__':
         print "Fill it with proper values and run the script again\n"
         os.sys.exit()
 
-    if not os.access(template, os.R_OK):
+    if not os.access(TEMPLATE, os.R_OK):
         print 'please run the script from terraform directory'
         os.sys.exit()
 
@@ -211,17 +231,18 @@ if __name__ == '__main__':
         print json.dumps(CONTEXT, indent=2)
 
     if ARGS.test:
-        print render(template, CONTEXT)
+        print render(TEMPLATE, CONTEXT)
     else:
-        with open(rendered_filename, 'w') as fh:
-            fh.write(render(template, CONTEXT))
-        iblox_vars = ast.literal_eval(json.dumps(CONTEXT))
-        INSTANCES = iblox_vars['instances']
+        with open(RENDERED_FNAME, 'w') as fh:
+            fh.write(render(TEMPLATE, CONTEXT))
+        IBLOX_VARS = ast.literal_eval(json.dumps(CONTEXT))
+        INSTANCES = IBLOX_VARS['instances']
 
         for virtual_machine in range(1, int(INSTANCES) + 1):
-            ipv4_address = iblox_vars[str(virtual_machine)]['ipv4_address']
-            ipv6_address = iblox_vars[str(virtual_machine)]['ipv6_address']
-            host_name = iblox_vars[str(virtual_machine)]['hostname']
+            inst = "_{}".format(virtual_machine)
+            ipv4_address = IBLOX_VARS[inst]['ipv4_address']
+            ipv6_address = IBLOX_VARS[inst]['ipv6_address']
+            host_name = IBLOX_VARS[inst]['hostname']
             Iblox(host_name, ipv4_address, ipv6_address).rebuild()
 
-        terraform_apply(USERNAME, PASSWORD)
+        terraform_apply()
