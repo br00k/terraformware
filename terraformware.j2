@@ -2,11 +2,12 @@
 #
 
 # set consul backend
-data "terraform_remote_state" "terraform" {
+data "terraform_remote_state" "{{ custom_locals('module_dir') }}" {
   backend = "consul"
   config {
     address      = "{{ custom_variable('consul_server') }}"
     access_token = "{{ custom_variable('consul_token') }}"
+    datacenter   = "GEANT"
     scheme       = "http"
     path         = "{{ custom_locals('module_dir') }}"
     lock         = "true"

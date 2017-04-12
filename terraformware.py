@@ -127,7 +127,6 @@ def terraform_run(action, work_dir='.'):
     """run terraform"""
 
     tform = Terraform(working_dir=work_dir)
-
     if action == 'destroy':
         print "running terraform destroy..."
         tform.destroy()
@@ -279,12 +278,14 @@ if __name__ == '__main__':
         ipv4_address = IBLOX_VARS[inst]['ipv4_address']
         ipv6_address = IBLOX_VARS[inst]['ipv6_address']
         host_name = IBLOX_VARS[inst]['hostname']
+        if ARGS.destroy:
+            Iblox(host_name, ipv4_address, ipv6_address).destroy()
+        else:
+            Iblox(host_name, ipv4_address, ipv6_address).rebuild()
 
     if ARGS.destroy:
-        Iblox(host_name, ipv4_address, ipv6_address).destroy()
         terraform_run('destroy')
     else:
-        Iblox(host_name, ipv4_address, ipv6_address).rebuild()
         terraform_run('apply')
 
     byebye()
