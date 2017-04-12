@@ -61,6 +61,7 @@ def parse():
     parser.add_argument('-var-file', dest='vfile', action='append', default=[])
     parser.add_argument('-t', '--test', action='store_true')
     parser.add_argument('-s', '--showvars', action='store_true')
+    parser.add_argument('--destroy', action='store_true')
 
     return parser.parse_args()
 
@@ -122,13 +123,17 @@ def render(j2_template, j2_context):
     return jinja_template.render(**j2_context)
 
 
-def terraform_apply(work_dir='.'):
+def terraform_run(action, work_dir='.'):
     """run terraform"""
 
-    print "running terraform... (takes a while)"
-    os.sys.exit()
     tform = Terraform(working_dir=work_dir)
-    tform.apply(refresh=False)
+
+    if action == 'destroy':
+        print "running terraform destroy..."
+        tform.destroy()
+    elif action == 'apply':
+        print "running terraform apply... (takes a while)"
+        tform.apply(refresh=False)
 
 
 class Iblox(object):
@@ -177,13 +182,8 @@ class Iblox(object):
         else:
             return aaaa_rec
 
-    def rebuild(self):
-        """delete entry and create it again
-           couple of things:
-             - cannot get hostrecord ipv6 to work
-             - update_if_exists does not work as expected
-             - we need to destroy and create the entry again
-        """
+    def destroy(self):
+        """ clean up host entries """
         host_entry = self.query_host()
         a_entry = self.query_a()
         aaaa_entry = self.query_aaaa()
@@ -199,6 +199,16 @@ class Iblox(object):
             self.conn.delete_object(aaaa_entry['_ref'])
             print "destroyed AAAA record {} with IPv6 {}".format(
                 self.record, self.ipv6)
+
+    def rebuild(self):
+        """delete entry and create it again
+           couple of things:
+             - cannot get hostrecord ipv6 to work
+             - update_if_exists does not work as expected
+             - we need to destroy and create the entry again
+        """
+
+        self.destroy()
 
         try:
             objects.ARecord.create(self.conn, view='External',
@@ -264,13 +274,17 @@ if __name__ == '__main__':
         IBLOX_VARS = ast.literal_eval(json.dumps(CONTEXT))
         INSTANCES = IBLOX_VARS['instances']
 
-        for virtual_machine in range(1, int(INSTANCES) + 1):
-            inst = "_{}".format(virtual_machine)
-            ipv4_address = IBLOX_VARS[inst]['ipv4_address']
-            ipv6_address = IBLOX_VARS[inst]['ipv6_address']
-            host_name = IBLOX_VARS[inst]['hostname']
-            Iblox(host_name, ipv4_address, ipv6_address).rebuild()
+    for virtual_machine in range(1, int(INSTANCES) + 1):
+        inst = "_{}".format(virtual_machine)
+        ipv4_address = IBLOX_VARS[inst]['ipv4_address']
+        ipv6_address = IBLOX_VARS[inst]['ipv6_address']
+        host_name = IBLOX_VARS[inst]['hostname']
 
-        terraform_apply()
+    if ARGS.destroy:
+        Iblox(host_name, ipv4_address, ipv6_address).destroy()
+        terraform_run('destroy')
+    else:
+        Iblox(host_name, ipv4_address, ipv6_address).rebuild()
+        terraform_run('apply')
 
     byebye()
