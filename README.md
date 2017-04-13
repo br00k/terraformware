@@ -14,7 +14,8 @@ Download [terraform](https://www.terraform.io/downloads.html)
 
 The version of your terraform can be checked running: `terraform version` (it will tell you if a newer version is available).
 
-## how to use terraform Infoblox provider (API mismatch with out Infoblox!!)
+## how to use terraform Infoblox provider (Broken!!! API mismatch with our Infoblox!!)
+### This is actually carried out by the python API
 
 Download [terraform infoblox provider](https://github.com/prudhvitella/terraform-provider-infoblox/releases/)
 
