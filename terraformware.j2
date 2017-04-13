@@ -2,14 +2,14 @@
 #
 
 # set consul backend
-data "terraform_remote_state" "{{ custom_locals('module_dir') }}" {
+data "terraform_remote_state" "{{ custom_global('MODULE_DIR') }}" {
   backend = "consul"
   config {
     address      = "{{ custom_variable('consul_server') }}"
     access_token = "{{ custom_variable('consul_token') }}"
     datacenter   = "GEANT"
     scheme       = "http"
-    path         = "{{ custom_locals('module_dir') }}"
+    path         = "{{ custom_global('MODULE_DIR') }}"
     lock         = "true"
   }
 }
@@ -32,10 +32,10 @@ provider "vsphere" {
     allow_unverified_ssl = "true"
 }
 
-# Create folder "{{ custom_locals('module_dir') }}"
-resource "vsphere_folder" "{{ custom_locals('module_dir') }}" {
+# Create folder "{{ custom_global('MODULE_DIR') }}"
+resource "vsphere_folder" "{{ custom_global('MODULE_DIR') }}" {
     datacenter = "${var.common["datacenter"]}"
-    path       = "{{ custom_locals('module_dir') }}"
+    path       = "{{ custom_global('MODULE_DIR') }}"
 }
 
 {% for count in range(instances|int) -%}
@@ -60,11 +60,11 @@ resource "infoblox_record" "{{ custom_dictionary(instance, 'hostname') }}_AAAA" 
 }
 */
 
-# Create virtual machine {{ custom_dictionary(instance, 'hostname') }} within the folder {{ custom_locals('module_dir') }}
+# Create virtual machine {{ custom_dictionary(instance, 'hostname') }} within the folder {{ custom_global('MODULE_DIR') }}
 resource "vsphere_virtual_machine" "{{ custom_dictionary(instance, 'hostname') }}" {
     name        = "${var.{{ instance }}["hostname"]}"
     datacenter  = "${var.common["datacenter"]}"
-    folder      = "{{ custom_locals('module_dir') }}"
+    folder      = "{{ custom_global('MODULE_DIR') }}"
     vcpu        = "${var.{{ instance }}["vcpu"]}"
     memory      = "${var.{{ instance }}["memory"]}"
     dns_servers = "${var.dns_servers}"

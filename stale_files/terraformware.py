@@ -8,14 +8,13 @@
     - ast, requests, configparser, jinja2, argparse, json
   TODO:
     - add External/Internal view for Infoblox (now we've hardcoded External)
-    - add progress and output to terraform execution
+    - add some progress and time for terraform execution
 """
 import os
 import ast
 import json
 import argparse
 import ConfigParser
-from datetime import datetime
 import hcl
 from jinja2 import Template
 from python_terraform import Terraform
@@ -24,8 +23,17 @@ from infoblox_client import objects
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-MODULE_DIR = os.path.basename(os.getcwd())
 CRED_CONF = os.path.join(os.environ['HOME'], '.terraformware.conf')
+TF_RC_CONF = os.path.join(os.environ['HOME'], '.terraformrc')
+
+TF_RC_CONTENT = """# Infoblox provider\n#
+# download URL: https://github.com/prudhvitella/terraform-provider-infoblox/releases/
+#
+providers {
+  infoblox = "/path/to/terraform-provider-infoblox"
+}\n
+"""
+
 CRED_FILE_CONTENT = """[terraformware]\n
 # Vcenter username (AD user) <string>: your_username
 vsphere_username = your_username\n
@@ -50,11 +58,10 @@ def parse():
     """ parse arguments """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-var-file', dest='vfile', help='Process extra variable file',action='append', default=[])
-    parser.add_argument('-t', '--test', help='Only test', action='store_true')
-    parser.add_argument('-s', '--showvars', help='Show variables', action='store_true')
-    parser.add_argument('--init', help='Run terraform init', action='store_true')
-    parser.add_argument('--destroy', help='Destroy resources', action='store_true')
+    parser.add_argument('-var-file', dest='vfile', action='append', default=[])
+    parser.add_argument('-t', '--test', action='store_true')
+    parser.add_argument('-s', '--showvars', action='store_true')
+    parser.add_argument('--destroy', action='store_true')
 
     return parser.parse_args()
 
@@ -89,6 +96,8 @@ def load_variables(filenames, terrafile='./variables.tf'):
 def render(j2_template, j2_context):
     """ render jinja templates """
 
+    global module_dir
+    module_dir = os.path.basename(os.getcwd())
     config = ConfigParser.RawConfigParser()
     config.readfp(open(CRED_CONF))
 
@@ -100,7 +109,7 @@ def render(j2_template, j2_context):
         """return variable"""
         return config.get('terraformware', arg_var)
 
-    def custom_global(args_global):
+    def custom_locals(args_global):
         """ return variable defined in the script"""
         return globals()[args_global]
 
@@ -109,7 +118,7 @@ def render(j2_template, j2_context):
     jinja_template = Template(template)
     jinja_template.globals['custom_dictionary'] = custom_dictionary
     jinja_template.globals['custom_variable'] = custom_variable
-    jinja_template.globals['custom_global'] = custom_global
+    jinja_template.globals['custom_locals'] = custom_locals
 
     return jinja_template.render(**j2_context)
 
@@ -123,10 +132,8 @@ def terraform_run(action, work_dir='.'):
         tform.destroy()
     elif action == 'apply':
         print "running terraform apply... (takes a while)"
-        tform.apply(refresh=True)
-    elif action == 'init':
-        print "running terraform init..."
-        tform.cmd('init')
+        tform.apply(refresh=False)
+
 
 class Iblox(object):
     """manage infoblox entries"""
@@ -163,7 +170,7 @@ class Iblox(object):
             return None
         else:
             if self.ipv4 == str(a_rec['ipv4addr']):
-                return 'already_there'
+                return None
             else:
                 return a_rec
 
@@ -175,8 +182,8 @@ class Iblox(object):
         except TypeError:
             return None
         else:
-            if self.ipv6 == str(aaaa_rec['ipv6addr']):
-                return 'already_there'
+            if self.ipv6 == str(a_rec['ipv6addr']):
+                return None
             else:
                 return aaaa_rec
 
@@ -189,47 +196,11 @@ class Iblox(object):
         if host_entry:
             self.conn.delete_object(host_entry['_ref'])
             print "destroyed host record {}".format(self.record)
-        if a_entry and a_entry != 'already_there':
+        if a_entry:
             self.conn.delete_object(a_entry['_ref'])
             print "destroyed A Record for {} with IP {}".format(
                 self.record, self.ipv4)
-        if aaaa_entry and aaaa_entry != 'already_there':
-            self.conn.delete_object(aaaa_entry['_ref'])
-            print "destroyed AAAA record {} with IPv6 {}".format(
-                self.record, self.ipv6)
-
-    def destroy(self):
-        """ clean up host entries """
-        host_entry = self.query_host()
-        if host_entry:
-            self.conn.delete_object(host_entry['_ref'])
-            print "destroyed host record {}".format(self.record)
-
-        try:
-            self.conn.delete_object(self.conn.get_object('record:a', {'name': self.record})[0]['_ref'])
-        except TypeError:
-            pass
-
-        try:
-            self.conn.delete_object(self.conn.get_object('record:aaaa', {'name': self.record})[0]['_ref'])
-        except TypeError:
-            pass
-
-
-    def destroy_conditional(self):
-        """ clean up host entries """
-        host_entry = self.query_host()
-        a_entry = self.query_a()
-        aaaa_entry = self.query_aaaa()
-
-        if host_entry:
-            self.conn.delete_object(host_entry['_ref'])
-            print "destroyed host record {}".format(self.record)
-        if a_entry and a_entry != 'already_there':
-            self.conn.delete_object(a_entry['_ref'])
-            print "destroyed A Record for {} with IP {}".format(
-                self.record, self.ipv4)
-        if aaaa_entry and aaaa_entry != 'already_there':
+        if aaaa_entry:
             self.conn.delete_object(aaaa_entry['_ref'])
             print "destroyed AAAA record {} with IPv6 {}".format(
                 self.record, self.ipv6)
@@ -240,39 +211,27 @@ class Iblox(object):
             - create new A and AAA records
         """
 
-        self.destroy_conditional()
-        a_entry = self.query_a()
-        aaaa_entry = self.query_aaaa()
+        self.destroy()
 
-        if a_entry != 'already_there':
-            try:
-                objects.ARecord.create(self.conn, view='External',
-                                       name=self.record, ip=self.ipv4)
-            except Exception as err:
-                print "couldn't create A Record for {} with IP {}: {}".format(
-                    self.record, self.ipv4, err)
-                byebye(1)
-            else:
-                print "created A Record {} with IP {}".format(
-                    self.record, self.ipv4)
+        try:
+            objects.ARecord.create(self.conn, view='External',
+                                   name=self.record, ip=self.ipv4)
+        except Exception as err:
+            print "could not create A Record for {} with IP {}: {}".format(
+                self.record, self.ipv4, err)
+            byebye(1)
         else:
-            print "A Record {} with IPv4 {} was already there".format(
-                self.record, self.ipv4)
+            print "created A Record {} with IP {}".format(self.record,self.ipv4)
 
-        if aaaa_entry != 'already_there':
-            try:
-                objects.AAAARecord.create(self.conn, view='External',
-                                          name=self.record, ip=self.ipv6)
-            except Exception as err:
-                print "couldn't create AAAA Record {} with IPv6 {}: {}".format(
-                    self.record, self.ipv6, err)
-                byebye(1)
-            else:
-                print "created AAAA Record {} with IP {}".format(
-                    self.record, self.ipv6)
+        try:
+            objects.AAAARecord.create(self.conn, view='External',
+                                      name=self.record, ip=self.ipv6)
+        except Exception as err:
+            print "could not create AAAA Record {} with IPv6 {}: {}".format(
+                self.record, self.ipv6, err)
+            byebye(1)
         else:
-            print "AAAA Record {} with IPv6 {} was already there".format(
-                self.record, self.ipv6)
+            print "created AAAA Record {} with IP {}".format(self.record, self.ipv6)
 
         print '='*80
 
@@ -280,7 +239,6 @@ class Iblox(object):
 if __name__ == '__main__':
     print '='*80
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-    START_TIME = datetime.now()
     TEMPLATE = './terraformware.j2'
     RENDERED_FNAME = 'main.tf'
 
@@ -289,6 +247,14 @@ if __name__ == '__main__':
         CRED_FILE.write(CRED_FILE_CONTENT)
         CRED_FILE.close()
         print "\nThe following file has been created: {0}\n".format(CRED_CONF)
+        print "Fill it with proper values and run the script again\n"
+        byebye(1)
+
+    if not os.access(TF_RC_CONF, os.W_OK):
+        TF_FILE = open(TF_RC_CONF, 'w+')
+        TF_FILE.write(TF_RC_CONTENT)
+        TF_FILE.close()
+        print "\nThe following file has been created: {0}\n".format(TF_RC_CONF)
         print "Fill it with proper values and run the script again\n"
         byebye(1)
 
@@ -326,6 +292,4 @@ if __name__ == '__main__':
     else:
         terraform_run('apply')
 
-    TIME_SPENT = (datetime.now() - START_TIME).seconds
-    print "======== Script processed in {} seconds ========".format(TIME_SPENT)
     byebye()
