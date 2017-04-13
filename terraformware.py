@@ -58,7 +58,6 @@ def parse():
     parser.add_argument('--destroy', help='destroy resources', action='store_true')
     parser.add_argument('-p', '--plan', help='dry run execution', action='store_true')
 
-
     return parser.parse_args()
 
 
