@@ -64,6 +64,7 @@ def parse():
 
 def byebye(status=0):
     """ remove main.tf and say good bye """
+
     if os.access('./main.tf', os.W_OK):
         os.remove('./main.tf')
     os.sys.exit(status)
@@ -330,5 +331,5 @@ if __name__ == '__main__':
         terraform_run('apply')
 
     TIME_SPENT = (datetime.now() - START_TIME).seconds
-    print "======== Script processed in {} seconds ========".format(TIME_SPENT)
+    print "======== Script processed in {} seconds ========\n".format(TIME_SPENT)
     byebye()
