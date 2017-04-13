@@ -57,6 +57,7 @@ def parse():
     parser.add_argument('--init', help='run terraform init', action='store_true')
     parser.add_argument('--destroy', help='destroy resources', action='store_true')
     parser.add_argument('-p', '--plan', help='dry run execution', action='store_true')
+    parser.add_argument('-a', '--apply', help='run terraform', action='store_true')
 
     return parser.parse_args()
 
@@ -95,15 +96,15 @@ def render(j2_template, j2_context):
     config.readfp(open(CRED_CONF))
 
     def custom_dictionary(arg_key, arg_sub_key):
-        """return dict value"""
+        """ return dict value """
         return j2_context[arg_key][arg_sub_key].split('.')[0]
 
     def custom_variable(arg_var):
-        """return variable"""
+        """ return variable """
         return config.get('terraformware', arg_var)
 
     def custom_global(args_global):
-        """ return variable defined in the script"""
+        """ return variable defined in the script """
         return globals()[args_global]
 
     with open(j2_template, 'r') as my_template:
@@ -117,21 +118,25 @@ def render(j2_template, j2_context):
 
 
 def terraform_run(action, work_dir='.'):
-    """run terraform"""
+    """ run terraform """
 
     tform = Terraform(working_dir=work_dir)
     if action == 'destroy':
         print "running terraform destroy..."
         out = tform.destroy()
     elif action == 'apply':
-        print "running terraform apply... (takes a while)"
+        print "running terraform plan first..."
+        out = tform.cmd('plan')
+        print out[1]
+        print "applying plan... (takes a while)"
         out = tform.apply(refresh=True)
     elif action == 'init':
         print "running terraform init..."
         out = tform.cmd('init')
     elif action == 'plan':
         print "running terraform init..."
-        out = tform.plan()
+        out = tform.cmd('plan')
+        # out = tform.plan()
 
     print out[1]
 
@@ -196,24 +201,19 @@ class Iblox(object):
             print "destroyed host record {}".format(self.record)
 
         try:
-            self.conn.delete_object(
-                self.conn.get_object('record:a',
-                                     {'name': self.record})[0]['_ref'])
+            self.conn.delete_object(self.conn.get_object('record:a', {'name': self.record})[0]['_ref'])
         except TypeError:
             pass
         else:
-            print "destroyed A Record {} with IP {}".format(self.record,
-                                                            self.ipv4)
+            print "destroyed A Record {} with IP {}".format(self.record, self.ipv4)
 
         try:
             self.conn.delete_object(
-                self.conn.get_object('record:aaaa',
-                                     {'name': self.record})[0]['_ref'])
+                self.conn.get_object('record:aaaa', {'name': self.record})[0]['_ref'])
         except TypeError:
             pass
         else:
-            print "destroyed AAAA Record {} with IP {}".format(self.record,
-                                                               self.ipv6)
+            print "destroyed AAAA Record {} with IP {}".format(self.record, self.ipv6)
 
     def destroy_conditional(self):
         """ clean up host entries """
@@ -248,8 +248,7 @@ class Iblox(object):
                 objects.ARecord.create(self.conn, view='External',
                                        name=self.record, ip=self.ipv4)
             except Exception as err:
-                print "couldn't create A Record for {} with IP {}: {}".format(
-                    self.record, self.ipv4, err)
+                print "couldn't create A Record for {} with IP {}: {}".format(self.record, self.ipv4, err)
                 byebye(1)
             else:
                 print "created A Record {} with IP {}".format(
@@ -263,15 +262,13 @@ class Iblox(object):
                 objects.AAAARecord.create(self.conn, view='External',
                                           name=self.record, ip=self.ipv6)
             except Exception as err:
-                print "couldn't create AAAA Record {} with IPv6 {}: {}".format(
-                    self.record, self.ipv6, err)
+                print "couldn't create AAAA Record {} with IPv6 {}: {}".format(self.record, self.ipv6, err)
                 byebye(1)
             else:
                 print "created AAAA Record {} with IP {}".format(
                     self.record, self.ipv6)
         else:
-            print "AAAA Record {} with IPv6 {} was already there".format(
-                self.record, self.ipv6)
+            print "AAAA Record {} with IPv6 {} was already there".format(self.record, self.ipv6)
 
         print '='*80
 
@@ -326,9 +323,9 @@ if __name__ == '__main__':
         terraform_run('init')
     elif ARGS.plan:
         terraform_run('plan')
-    else:
+    elif ARGS.apply:
         terraform_run('apply')
 
-    TIME_SPENT = (datetime.now() - START_TIME).seconds
-    print "======== Script processed in {} seconds ========\n".format(TIME_SPENT)
+    SPENT = (datetime.now() - START_TIME).seconds
+    print "======== Script processed in {} seconds ========\n".format(SPENT)
     byebye()
