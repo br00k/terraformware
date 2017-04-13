@@ -1,10 +1,10 @@
 # Terraform for VMware and Infoblox
 
-This script will: 
+This script will:
 
-- render `main.j2` and create a terraform file (`main.tf`) using the variables defined in `variables.tf`
+- render `terraform.j2` and create a terraform file (`main.tf`) using the variables defined in `variables.tf` (this file will vanish when the script ends)
 
-- add DNS entries to infoblox
+- add/replace/remove DNS entries to infoblox
 
 - run terraform
 
@@ -12,9 +12,9 @@ This script will:
 
 Download [terraform](https://www.terraform.io/downloads.html)
 
-The version of your terraform binary can be checked running: `terraform version` (this command will tell you if a newer version is available). 
+The version of your terraform can be checked running: `terraform version` (it will tell you if a newer version is available).
 
-##how to use terraform Infoblox provider
+##how to use terraform Infoblox provider (API mismatch with out Infoblox!!)
 
 Download [terraform infoblox provider](https://github.com/prudhvitella/terraform-provider-infoblox/releases/)
 
@@ -43,4 +43,6 @@ Help your self with the following libraries:
 `python-terraform`  (available through pip)
 `requests`
 
-
+##TODO
+- add selection for External/Internal view for Infoblox (now we've hardcoded External)
+- add output to terraform execution (now it's only showing stderr)

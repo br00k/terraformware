@@ -50,11 +50,11 @@ def parse():
     """ parse arguments """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-var-file', dest='vfile', help='Process extra variable file',action='append', default=[])
-    parser.add_argument('-t', '--test', help='Only test', action='store_true')
-    parser.add_argument('-s', '--showvars', help='Show variables', action='store_true')
-    parser.add_argument('--init', help='Run terraform init', action='store_true')
-    parser.add_argument('--destroy', help='Destroy resources', action='store_true')
+    parser.add_argument('-var-file', dest='vfile', help='process extra variable file',action='append', default=[])
+    parser.add_argument('-t', '--test', help='only test', action='store_true')
+    parser.add_argument('-s', '--showvars', help='show variables', action='store_true')
+    parser.add_argument('--init', help='run terraform init', action='store_true')
+    parser.add_argument('--destroy', help='destroy resources', action='store_true')
 
     return parser.parse_args()
 
@@ -128,6 +128,7 @@ def terraform_run(action, work_dir='.'):
         print "running terraform init..."
         tform.cmd('init')
 
+
 class Iblox(object):
     """manage infoblox entries"""
     config = ConfigParser.RawConfigParser()
@@ -183,38 +184,29 @@ class Iblox(object):
     def destroy(self):
         """ clean up host entries """
         host_entry = self.query_host()
-        a_entry = self.query_a()
-        aaaa_entry = self.query_aaaa()
-
-        if host_entry:
-            self.conn.delete_object(host_entry['_ref'])
-            print "destroyed host record {}".format(self.record)
-        if a_entry and a_entry != 'already_there':
-            self.conn.delete_object(a_entry['_ref'])
-            print "destroyed A Record for {} with IP {}".format(
-                self.record, self.ipv4)
-        if aaaa_entry and aaaa_entry != 'already_there':
-            self.conn.delete_object(aaaa_entry['_ref'])
-            print "destroyed AAAA record {} with IPv6 {}".format(
-                self.record, self.ipv6)
-
-    def destroy(self):
-        """ clean up host entries """
-        host_entry = self.query_host()
         if host_entry:
             self.conn.delete_object(host_entry['_ref'])
             print "destroyed host record {}".format(self.record)
 
         try:
-            self.conn.delete_object(self.conn.get_object('record:a', {'name': self.record})[0]['_ref'])
+            self.conn.delete_object(
+                self.conn.get_object('record:a',
+                                     {'name': self.record})[0]['_ref'])
         except TypeError:
             pass
+        else:
+            print "destroyed A Record {} with IP {}".format(self.record,
+                                                            self.ipv4)
 
         try:
-            self.conn.delete_object(self.conn.get_object('record:aaaa', {'name': self.record})[0]['_ref'])
+            self.conn.delete_object(
+                self.conn.get_object('record:aaaa',
+                                     {'name': self.record})[0]['_ref'])
         except TypeError:
             pass
-
+        else:
+            print "destroyed AAAA Record {} with IP {}".format(self.record,
+                                                               self.ipv6)
 
     def destroy_conditional(self):
         """ clean up host entries """
@@ -227,7 +219,7 @@ class Iblox(object):
             print "destroyed host record {}".format(self.record)
         if a_entry and a_entry != 'already_there':
             self.conn.delete_object(a_entry['_ref'])
-            print "destroyed A Record for {} with IP {}".format(
+            print "destroyed A Record {} with IP {}".format(
                 self.record, self.ipv4)
         if aaaa_entry and aaaa_entry != 'already_there':
             self.conn.delete_object(aaaa_entry['_ref'])
@@ -323,6 +315,8 @@ if __name__ == '__main__':
 
     if ARGS.destroy:
         terraform_run('destroy')
+    elif ARGS.init:
+        terraform_run('init')
     else:
         terraform_run('apply')
 
