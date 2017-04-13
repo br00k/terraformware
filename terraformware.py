@@ -50,11 +50,16 @@ def parse():
     """ parse arguments """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-var-file', dest='vfile', help='process extra variable file',action='append', default=[])
+    parser.add_argument('-var-file', dest='vfile',
+                        help='process extra variable file',
+                        action='append', default=[])
     parser.add_argument('-t', '--test', help='only test', action='store_true')
-    parser.add_argument('-s', '--showvars', help='show variables', action='store_true')
-    parser.add_argument('--init', help='run terraform init', action='store_true')
-    parser.add_argument('--destroy', help='destroy resources', action='store_true')
+    parser.add_argument('-s', '--showvars', help='show variables',
+                        action='store_true')
+    parser.add_argument('--init', help='run terraform init',
+                        action='store_true')
+    parser.add_argument('--destroy', help='destroy resources',
+                        action='store_true')
 
     return parser.parse_args()
 
