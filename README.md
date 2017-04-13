@@ -8,13 +8,13 @@ This script will:
 
 - run terraform
 
-##how to use terraform
+## how to use terraform
 
 Download [terraform](https://www.terraform.io/downloads.html)
 
 The version of your terraform can be checked running: `terraform version` (it will tell you if a newer version is available).
 
-##how to use terraform Infoblox provider (API mismatch with out Infoblox!!)
+## how to use terraform Infoblox provider (API mismatch with out Infoblox!!)
 
 Download [terraform infoblox provider](https://github.com/prudhvitella/terraform-provider-infoblox/releases/)
 
@@ -28,7 +28,7 @@ providers {
 }
 ```
 
-##how to use the script
+## how to use the script
 
 Help your self with the following libraries:
 `os`
@@ -43,6 +43,6 @@ Help your self with the following libraries:
 `python-terraform`  (available through pip)
 `requests`
 
-##TODO
+## TODO
 - add selection for External/Internal view for Infoblox (now we've hardcoded External)
-- add output to terraform execution (now it's only showing stderr)
+

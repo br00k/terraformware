@@ -50,23 +50,20 @@ def parse():
     """ parse arguments """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-var-file', dest='vfile',
-                        help='process extra variable file',
+    parser.add_argument('-var-file', dest='vfile', help='process extra var file',
                         action='append', default=[])
     parser.add_argument('-t', '--test', help='only test', action='store_true')
-    parser.add_argument('-s', '--showvars', help='show variables',
-                        action='store_true')
-    parser.add_argument('--init', help='run terraform init',
-                        action='store_true')
-    parser.add_argument('--destroy', help='destroy resources',
-                        action='store_true')
+    parser.add_argument('-s', '--showvars', help='show variables', action='store_true')
+    parser.add_argument('--init', help='run terraform init', action='store_true')
+    parser.add_argument('--destroy', help='destroy resources', action='store_true')
+    parser.add_argument('-p', '--plan', help='dry run execution', action='store_true')
+
 
     return parser.parse_args()
 
 
 def byebye(status=0):
     """ remove main.tf and say good bye """
-
     if os.access('./main.tf', os.W_OK):
         os.remove('./main.tf')
     os.sys.exit(status)
@@ -125,13 +122,18 @@ def terraform_run(action, work_dir='.'):
     tform = Terraform(working_dir=work_dir)
     if action == 'destroy':
         print "running terraform destroy..."
-        tform.destroy()
+        out = tform.destroy()
     elif action == 'apply':
         print "running terraform apply... (takes a while)"
-        tform.apply(refresh=True)
+        out = tform.apply(refresh=True)
     elif action == 'init':
         print "running terraform init..."
-        tform.cmd('init')
+        out = tform.cmd('init')
+    elif action == 'plan':
+        print "running terraform init..."
+        out = tform.plan()
+
+    print out[1]
 
 
 class Iblox(object):
@@ -322,6 +324,8 @@ if __name__ == '__main__':
         terraform_run('destroy')
     elif ARGS.init:
         terraform_run('init')
+    elif ARGS.plan:
+        terraform_run('plan')
     else:
         terraform_run('apply')
 
