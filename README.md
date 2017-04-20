@@ -32,8 +32,11 @@ providers {
 ## how to use the script
 
 Help yourself with the following libraries: 
+
 `os` 
+
 `ast` 
+
 `git` 
 `glob` 
 `json` 
