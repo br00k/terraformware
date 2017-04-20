@@ -14,8 +14,8 @@ Download [terraform](https://www.terraform.io/downloads.html)
 
 The version of your terraform can be checked running: `terraform version` (it will tell you if a newer version is available).
 
-## how to use terraform Infoblox provider (Broken!!! API version mismatch with our Infoblox)
-#### No worries: this is actually carried out by the python API
+## how to use terraform Infoblox provider (Broken!! API version mismatch with our Infoblox)
+#### No worries: this task is actually carried out through the python API and this section can be ignored
 
 Download [terraform infoblox provider](https://github.com/prudhvitella/terraform-provider-infoblox/releases/)
 
@@ -34,6 +34,7 @@ providers {
 Help yourself with the following libraries:
 `os`
 `ast`
+`git`
 `glob`
 `json`
 `argparse`
@@ -45,5 +46,5 @@ Help yourself with the following libraries:
 `requests`
 
 ## TODO
-- add selection for External/Internal view for Infoblox (now we've hardcoded External)
+- add selection for External/Internal network for Infoblox (for now we've hardcoded External)
 

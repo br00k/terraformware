@@ -70,6 +70,78 @@ def byebye(status=0):
     os.sys.exit(status)
 
 
+def git_pull(branch='terraform'):
+    """ git: stash, checkout, pull """
+    git_cmd = git.cmd.Git('.')
+    local_branch = str(git_cmd.rev_parse('--abbrev-ref', 'HEAD'))
+
+    try:
+        git_stdout = git_cmd.stash()
+    except Exception as err:
+        print "Failed stash changes {}: {}".format(git_stdout, err)
+        byebye(1)
+    else:
+        git_cmd.stash('clear')
+        print "stashing changes: {}".format(git_stdout)
+
+    if local_branch != branch:
+        try:
+            git_cmd.checkout(branch)
+        except Exception as err:
+            print "Failed to checkout branch {}: {}".format(branch, err)
+            print "You may need to create the branch {}".format(branch)
+            byebye(1)
+        else:
+            print "switched to branch {}".format(branch)
+
+    try:
+        git_stdout = git_cmd.pull()
+    except Exception as err:
+        print "Failed to pull remote: {}".format(err)
+        byebye(1)
+    else:
+        print "pulling remote: {}".format(git_stdout)
+
+
+def git_commit():
+    """ commit tfstate """
+    git_cmd = git.cmd.Git('.')
+    state_files = ['terraform.tfstate', 'terraform.tfstate.backup']
+    now = datetime.now()
+    git_msg = "committed tfstate files on {} {} {} {}:{}".format(
+        now.year, now.month, now.day, now.hour, now.minute)
+
+    try:
+        git_stdout = git_cmd.add(state_files)
+    except Exception as err:
+        print "Failed to add {}: {} {}".format(', '.join(state_files),
+                                               git_stdout, err)
+        print "Please add your files {}".format(', '.join(state_files))
+        byebye(1)
+    else:
+        print "Added files {}: {}".format(', '.join(state_files), git_stdout)
+
+    try:
+        git_stdout = git_cmd.commit(m=git_msg)
+    except Exception as err:
+        print "Failed to commit {}: {}".format(', '.join(state_files), err)
+        print "Please commit {} to git".format(', '.join(state_files))
+        byebye(1)
+    else:
+        print "Commited files {}: {} {}".format(', '.join(state_files),
+                                                git_stdout, git_msg)
+
+    try:
+        git_stdout = git_cmd.push()
+    except Exception as err:
+        print "Failed to push {}: {}".format(', '.join(state_files), err)
+        print "Please commit {} to git".format(', '.join(state_files))
+        byebye(1)
+    else:
+        print "Commited files {}: {} {}".format(', '.join(state_files),
+                                                git_stdout, git_msg)
+
+
 def load_variables(filenames, terrafile='./variables.tf'):
     """ load terraform variables """
 
@@ -136,7 +208,6 @@ def terraform_run(action, work_dir='.'):
     elif action == 'plan':
         print "running terraform init..."
         out = tform.cmd('plan')
-        # out = tform.plan()
 
     print out[1]
 
@@ -292,6 +363,7 @@ if __name__ == '__main__':
         print 'please run the script from terraform directory'
         byebye(1)
 
+    git_pull()
     ARGS = parse()
 
     # jinja renderer taken from: https://github.com/Crapworks/terratools
@@ -319,12 +391,14 @@ if __name__ == '__main__':
 
     if ARGS.destroy:
         terraform_run('destroy')
+        git_commit()
     elif ARGS.init:
         terraform_run('init')
     elif ARGS.plan:
         terraform_run('plan')
     elif ARGS.apply:
         terraform_run('apply')
+        git_commit()
 
     SPENT = (datetime.now() - START_TIME).seconds
     print "======== Script processed in {} seconds ========\n".format(SPENT)
