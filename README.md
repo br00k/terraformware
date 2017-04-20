@@ -31,13 +31,13 @@ providers {
 
 ## how to use the script
 
-Help yourself with the following libraries:
-`os`
-`ast`
-`git`
-`glob`
-`json`
-`argparse`
+Help yourself with the following libraries: 
+`os` 
+`ast` 
+`git` 
+`glob` 
+`json` 
+`argparse` 
 `ConfigParser`
 `hcl` (available throuth pip with the name: `pyhcl`)
 `infoblox-client` (available through pip)
