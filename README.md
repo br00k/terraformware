@@ -31,22 +31,24 @@ providers {
 
 ## how to use the script
 
-Help yourself with the following libraries: 
+Install the following libraries: 
 
-`os` 
+- `os`
+- `ast`
+- `git` 
+- `glob` 
+- `json` 
+- `argparse` 
+- `ConfigParser`
+- `hcl` (available throuth pip with the name: `pyhcl`)
+- `infoblox-client` (available through pip)
+- `jinja2`
+- `python-terraform`  (available through pip)
+- `requests`
 
-`ast` 
+run: `terraformware.py -h`
 
-`git` 
-`glob` 
-`json` 
-`argparse` 
-`ConfigParser`
-`hcl` (available throuth pip with the name: `pyhcl`)
-`infoblox-client` (available through pip)
-`jinja2`
-`python-terraform`  (available through pip)
-`requests`
+The script must be executed within the directory with all the terraform configuration files 
 
 ## TODO
 - add selection for External/Internal network for Infoblox (for now we've hardcoded External)
