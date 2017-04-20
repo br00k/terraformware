@@ -16,6 +16,7 @@ import json
 import argparse
 import ConfigParser
 from datetime import datetime
+import git
 import hcl
 from jinja2 import Template
 from python_terraform import Terraform
@@ -70,30 +71,21 @@ def byebye(status=0):
     os.sys.exit(status)
 
 
-def git_pull(branch='terraform'):
+def git_pull():
     """ git: stash, checkout, pull """
     git_cmd = git.cmd.Git('.')
-    local_branch = str(git_cmd.rev_parse('--abbrev-ref', 'HEAD'))
 
+    # stash changes
     try:
         git_stdout = git_cmd.stash()
     except Exception as err:
-        print "Failed stash changes {}: {}".format(git_stdout, err)
+        print "Failed to stash changes {}: {}".format(git_stdout, err)
         byebye(1)
     else:
         git_cmd.stash('clear')
-        print "stashing changes: {}".format(git_stdout)
+        print "stashed changes: {}".format(git_stdout)
 
-    if local_branch != branch:
-        try:
-            git_cmd.checkout(branch)
-        except Exception as err:
-            print "Failed to checkout branch {}: {}".format(branch, err)
-            print "You may need to create the branch {}".format(branch)
-            byebye(1)
-        else:
-            print "switched to branch {}".format(branch)
-
+    # pull from remote
     try:
         git_stdout = git_cmd.pull()
     except Exception as err:
@@ -104,33 +96,35 @@ def git_pull(branch='terraform'):
 
 
 def git_commit():
-    """ commit tfstate """
+    """ commit ONLY tfstate """
     git_cmd = git.cmd.Git('.')
     state_files = ['terraform.tfstate', 'terraform.tfstate.backup']
     now = datetime.now()
-    git_msg = "committed tfstate files on {} {} {} {}:{}".format(
+    git_msg = "commit tfstate files on {} {} {} {}:{}".format(
         now.year, now.month, now.day, now.hour, now.minute)
 
-    try:
-        git_stdout = git_cmd.add(state_files)
-    except Exception as err:
-        print "Failed to add {}: {} {}".format(', '.join(state_files),
-                                               git_stdout, err)
-        print "Please add your files {}".format(', '.join(state_files))
-        byebye(1)
-    else:
-        print "Added files {}: {}".format(', '.join(state_files), git_stdout)
+    # add files: sometime the backup file is not there
+    for tf_status in state_files:
+        if os.access(tf_status, os.R_OK):
+            try:
+                git_stdout = git_cmd.add(state_files)
+            except Exception as err:
+                print "Failed to add {}: {} {}".format(tf_status, git_stdout, err)
+                print "Please add your files: {}".format(', '.join(state_files))
+                byebye(1)
+            else:
+                print "Added file {}: {}".format(tf_status, git_stdout)
 
+    # commit files
     try:
         git_stdout = git_cmd.commit(m=git_msg)
     except Exception as err:
-        print "Failed to commit {}: {}".format(', '.join(state_files), err)
-        print "Please commit {} to git".format(', '.join(state_files))
-        byebye(1)
+        print "Failed to commit: {} - {}".format(git_stdout, err)
+        byebye()
     else:
-        print "Commited files {}: {} {}".format(', '.join(state_files),
-                                                git_stdout, git_msg)
+        print "Commited files: {} - {}".format(git_stdout, git_msg)
 
+    # push
     try:
         git_stdout = git_cmd.push()
     except Exception as err:
@@ -272,7 +266,8 @@ class Iblox(object):
             print "destroyed host record {}".format(self.record)
 
         try:
-            self.conn.delete_object(self.conn.get_object('record:a', {'name': self.record})[0]['_ref'])
+            self.conn.delete_object(self.conn.get_object(
+                'record:a', {'name': self.record})[0]['_ref'])
         except TypeError:
             pass
         else:
@@ -319,7 +314,8 @@ class Iblox(object):
                 objects.ARecord.create(self.conn, view='External',
                                        name=self.record, ip=self.ipv4)
             except Exception as err:
-                print "couldn't create A Record for {} with IP {}: {}".format(self.record, self.ipv4, err)
+                print "couldn't create A Record for {} with IP {}: {}".format(
+                    self.record, self.ipv4, err)
                 byebye(1)
             else:
                 print "created A Record {} with IP {}".format(
@@ -333,7 +329,8 @@ class Iblox(object):
                 objects.AAAARecord.create(self.conn, view='External',
                                           name=self.record, ip=self.ipv6)
             except Exception as err:
-                print "couldn't create AAAA Record {} with IPv6 {}: {}".format(self.record, self.ipv6, err)
+                print "couldn't create AAAA Record {} with IPv6 {}: {}".format(
+                    self.record, self.ipv6, err)
                 byebye(1)
             else:
                 print "created AAAA Record {} with IP {}".format(
