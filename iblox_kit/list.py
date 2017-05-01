@@ -14,6 +14,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 iblox_kit.config.check()
 
+
 def span_ipv4(start=96):
     """ span IPv4 from 62.40.96.1 to 62.40.127.254 """
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)

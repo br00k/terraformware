@@ -30,6 +30,7 @@ consul_server = puppet01.geant.net:8500\n
 consul_token = xxxxxxxxxxx\n
 """
 
+
 def check():
     """ Check config file """
     if not os.access(CRED_CONF, os.W_OK):

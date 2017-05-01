@@ -38,7 +38,7 @@ def parse():
         description=textwrap.dedent(intro),
         epilog="Author: Massimiliano Adamo <massimiliano.adamo@geant.org>")
 
-    parser.add_argument('--host', help='existing host name. Mandatory when creating a txt')
+    parser.add_argument('--host', help='existing host name. Mandatory when creating TXT')
     parser.add_argument('--txt', help='txt to create. Mandatory', required=True)
     parser.add_argument('--network', help='network Internal/External',
                         choices=['External', 'Internal'], required=True)

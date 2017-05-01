@@ -1,11 +1,13 @@
 import os
 import iblox_kit
+from glob import glob
 from distutils.dir_util import remove_tree
 from setuptools import setup, find_packages
 
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
 
 setup(
     name='terraformware',
@@ -25,3 +27,7 @@ setup(
 for cleanup in ['dist', 'build', 'terraformware.egg-info']:
     if os.access(cleanup, os.W_OK):
         remove_tree(cleanup, verbose=1, dry_run=0)
+
+print "removing stale bytecode"
+for pyc in glob('iblox_kit/*.pyc'):
+    os.unlink(pyc)

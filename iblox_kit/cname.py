@@ -39,7 +39,7 @@ def parse():
         epilog="Author: Massimiliano Adamo <massimiliano.adamo@geant.org>")
 
     parser.add_argument('--host', help='existing host name. Mandatory when creating an alias')
-    parser.add_argument('--alias', help='alias to create. Mandatory', required=True)
+    parser.add_argument('--alias', help='CNAME to create. Mandatory', required=True)
     parser.add_argument('--network', help='network Internal/External',
                         choices=['External', 'Internal'], required=True)
     parser.add_argument('--destroy', help='destroy alias', action='store_true')
