@@ -2,9 +2,14 @@
 
 ## how to use the script
 
-Install the script first: `sudo python setup.py install`
+Clone this repo, install the package and run the help:
+```bash
+git clone gitlab@git.geant.net:terraform/terraformware.git
+sudo python setup.py install
+terraformware -h
+```
 
-run: `terraformware -h`
+The first time a configuration file will be created: you need to fill in proper values
 
 check `samples/terraformware.j2` and `samples/variables.tf`
 
