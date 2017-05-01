@@ -229,7 +229,7 @@ if __name__ == '__main__':
             try:
                 network = IBLOX_VARS[inst]['network']
             except KeyError:
-                print "not network defined: please choose either External, Internal"
+                print "network not defined: please choose either External, Internal"
                 byebye(1)
         if ARGS.destroy:
             record.Iblox(network, host_name, ipv4_addr).destroy()

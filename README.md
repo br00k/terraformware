@@ -6,12 +6,14 @@ Install the script first: `sudo python setup.py install`
 
 run: `terraformware -h`
 
+check `samples/terraformware.j2` and `samples/variables.tf`
+
 The script must be executed within the directory where you have the terraform configuration files
 
 
-This script will:
+The script will sync the status of your servers. In detail it will:
 
-- render `terraform.j2` and create a terraform file (`main.tf`) using the variables defined in `variables.tf` (this file will vanish when the script ends)
+- render `terraform.j2` and create a terraform file (`main.tf`) using the variables defined in `variables.tf` (`main.tf` will vanish when the script ends)
 
 - add/replace/remove DNS entries to infoblox
 
@@ -23,8 +25,8 @@ Download [terraform](https://www.terraform.io/downloads.html)
 
 The version of your terraform can be checked running: `terraform version` (it will tell you if a newer version is available).
 
-## how to use terraform Infoblox provider (Broken!! API version mismatch with our Infoblox)
-#### No worries: this task is actually carried out through the python API and this section can be ignored
+## how to use terraform Infoblox provider (Broken!! API version mismatch with our Infoblox version)
+#### this task is actually carried out through the python API and this section can be ignored
 
 Download [terraform infoblox provider](https://github.com/prudhvitella/terraform-provider-infoblox/releases/)
 
