@@ -1,1 +1,7 @@
 main.tf
+.*.swp
+*.pyc
+.idea
+build/
+dist/
+terraformware.egg-info/
