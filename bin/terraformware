@@ -1,14 +1,12 @@
 #!/usr/bin/python
 #
 """
-  requirements through pip:
-    - pyhcl
-    - infoblox-client
-    - python-terraform
-    - ast, requests, configparser, jinja2, argparse, json
+  Apply terraform status and set records on Infoblox
+
+  Use it with -h to check all available options: terraformware -h
+
   TODO:
-    - add External/Internal view for Infoblox (now we've hardcoded External)
-    - add progress and output to terraform execution
+    - add progress to terraform execution
 """
 import os
 import ast
@@ -196,13 +194,12 @@ if __name__ == '__main__':
     START_TIME = datetime.now()
     TEMPLATE = './terraformware.j2'
     RENDERED_FNAME = 'main.tf'
-
+    ARGS = parse()
     if not os.access(TEMPLATE, os.R_OK):
         print 'please run the script from terraform directory'
         byebye(1)
 
     git_pull()
-    ARGS = parse()
 
     # jinja renderer taken from: https://github.com/Crapworks/terratools
     CONTEXT = load_variables(ARGS.vfile)
@@ -217,15 +214,27 @@ if __name__ == '__main__':
         IBLOX_VARS = ast.literal_eval(json.dumps(CONTEXT))
         INSTANCES = IBLOX_VARS['instances']
 
+    # Check if there is a global network defined
+    try:
+        network = IBLOX_VARS['common']['network']
+    except KeyError:
+        network = None
+
     for virtual_machine in range(1, int(INSTANCES) + 1):
         inst = "_{}".format(virtual_machine)
-        ipv4_address = IBLOX_VARS[inst]['ipv4_address']
-        ipv6_address = IBLOX_VARS[inst]['ipv6_address']
+        ipv4_addr = IBLOX_VARS[inst]['ipv4_address']
+        ipv6_addr = IBLOX_VARS[inst]['ipv6_address']
         host_name = IBLOX_VARS[inst]['hostname']
+        if not network:
+            try:
+                network = IBLOX_VARS[inst]['network']
+            except KeyError:
+                print "not network defined: please choose either External, Internal"
+                byebye(1)
         if ARGS.destroy:
-            record.Iblox(host_name, ipv4_address, ipv6_address).destroy()
+            record.Iblox(network, host_name, ipv4_addr).destroy()
         else:
-            record.Iblox(host_name, ipv4_address, ipv6_address).rebuild()
+            record.Iblox(network, host_name, ipv4_addr, ipv6_addr).rebuild()
 
     if ARGS.destroy:
         terraform_run('destroy')

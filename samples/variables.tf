@@ -7,6 +7,7 @@ variable "instances" {
 variable "common" {
   type = "map"
   default = {
+    network = "External"
     vsphere_server = "chvc01.win.dante.org.uk"
     datacenter = "CityHouse"
     datastore = "datastore1"
