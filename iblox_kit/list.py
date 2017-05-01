@@ -9,33 +9,23 @@ import platform
 import ConfigParser
 from infoblox_client import connector
 import requests
+import iblox_kit.config
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-
-if platform.system() == 'Windows':
-    IBLOX_CONF = os.path.join(os.path.expanduser('~'), 'iblox.cfg')
-else:
-    IBLOX_CONF = os.path.join(os.environ['HOME'], '.ibloxrc')
-
-IBLOX_CONF_CONTENT = """[iblox]\n
-# Infoblox server <string>: infblox server fqdn
-iblox_server = infoblox.foo.bar.com\n
-# Infoblox username <string>: your_username
-iblox_username = your_username\n
-# Infoblox password <string>: your_password
-iblox_password = your_secret_pass_here\n
-"""
-
+iblox_kit.config.check()
 
 def span_ipv4(start=96):
     """ span IPv4 from 62.40.96.1 to 62.40.127.254 """
+    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+    print "searching free IPs v4 available on between 62.40.96.1 and 62.40.127.254"
+    print '-'*80
     net_prefix = '62.40.'
     config = ConfigParser.RawConfigParser()
-    config.readfp(open(IBLOX_CONF))
+    config.readfp(open(iblox_kit.config.CRED_CONF))
     opts = {
-        'host': config.get('iblox', 'iblox_server'),
-        'username': config.get('iblox', 'iblox_username'),
-        'password': config.get('iblox', 'iblox_password')
+        'host': config.get('terraformware', 'iblox_server'),
+        'username': config.get('terraformware', 'iblox_username'),
+        'password': config.get('terraformware', 'iblox_password')
         }
     conn = connector.Connector(opts)
 
@@ -81,11 +71,4 @@ def span_ipv4(start=96):
 
 if __name__ == '__main__':
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-    print "searching free IPs v4 available on each network from 62.40.96.1 to 62.40.127.254"
-    print '-'*80
-
     span_ipv4()
-
-    print "\nsearching free IPs v6 available on each network from 62.40.96.1 to 62.40.127.254"
-    print '-'*80

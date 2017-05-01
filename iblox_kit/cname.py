@@ -13,23 +13,12 @@ import platform
 import ConfigParser
 from infoblox_client import connector
 from infoblox_client import objects
+import iblox_kit.config
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 
-if platform.system() == 'Windows':
-    IBLOX_CONF = os.path.join(os.path.expanduser('~'), 'iblox.cfg')
-else:
-    IBLOX_CONF = os.path.join(os.environ['HOME'], '.ibloxrc')
-
-IBLOX_CONF_CONTENT = """[iblox]\n
-# Infoblox server <string>: infblox server fqdn
-iblox_server = infoblox.foo.bar.com\n
-# Infoblox username <string>: your_username
-iblox_username = your_username\n
-# Infoblox password <string>: your_password
-iblox_password = your_secret_pass_here\n
-"""
+iblox_kit.config.check()
 
 
 def parse():
@@ -63,14 +52,15 @@ class Iblox(object):
     config = ConfigParser.RawConfigParser()
 
     def __init__(self, network, record, alias):
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         self.network = network
         self.record = record
         self.alias = alias
-        self.config.readfp(open(IBLOX_CONF))
+        self.config.readfp(open(iblox_kit.config.CRED_CONF))
         self.opts = {
-            'host': self.config.get('iblox', 'iblox_server'),
-            'username': self.config.get('iblox', 'iblox_username'),
-            'password': self.config.get('iblox', 'iblox_password')
+            'host': self.config.get('terraformware', 'iblox_server'),
+            'username': self.config.get('terraformware', 'iblox_username'),
+            'password': self.config.get('terraformware', 'iblox_password')
             }
         self.conn = connector.Connector(self.opts)
 
@@ -136,16 +126,6 @@ class Iblox(object):
 
 if __name__ == '__main__':
     print '-'*74
-    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-    if not os.access(IBLOX_CONF, os.W_OK):
-        CONF_FILE = open(IBLOX_CONF, 'w+')
-        CONF_FILE.write(IBLOX_CONF_CONTENT)
-        CONF_FILE.close()
-        print "\nThe following file has been created: {0}\n".format(IBLOX_CONF)
-        print "Fill it with proper values and run the script again\n"
-        os.sys.exit(1)
-
     ARGS = parse()
 
     if not ARGS.destroy:
