@@ -3,7 +3,7 @@
 """
   Apply terraform status and set records on Infoblox
 
-  Use it with -h to check all available options: terraformware -h
+  Run it with -h to check all available options: terraformware -h
 
   TODO:
     - add progress to terraform execution
@@ -18,8 +18,6 @@ import git
 import hcl
 from jinja2 import Template
 from python_terraform import Terraform
-from infoblox_client import connector
-from infoblox_client import objects
 from iblox_kit import record
 import iblox_kit.config
 import requests
@@ -216,25 +214,25 @@ if __name__ == '__main__':
 
     # Check if there is a global network defined
     try:
-        network = IBLOX_VARS['common']['network']
+        NETWORK = IBLOX_VARS['common']['network']
     except KeyError:
-        network = None
+        NETWORK = None
 
     for virtual_machine in range(1, int(INSTANCES) + 1):
         inst = "_{}".format(virtual_machine)
         ipv4_addr = IBLOX_VARS[inst]['ipv4_address']
         ipv6_addr = IBLOX_VARS[inst]['ipv6_address']
         host_name = IBLOX_VARS[inst]['hostname']
-        if not network:
+        if not NETWORK:
             try:
-                network = IBLOX_VARS[inst]['network']
+                NETWORK = IBLOX_VARS[inst]['network']
             except KeyError:
                 print "network not defined: please choose either External, Internal"
                 byebye(1)
         if ARGS.destroy:
-            record.Iblox(network, host_name, ipv4_addr).destroy()
+            record.Iblox(NETWORK, host_name, ipv4_addr).destroy()
         else:
-            record.Iblox(network, host_name, ipv4_addr, ipv6_addr).rebuild()
+            record.Iblox(NETWORK, host_name, ipv4_addr, ipv6_addr).rebuild()
 
     if ARGS.destroy:
         terraform_run('destroy')

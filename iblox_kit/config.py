@@ -6,11 +6,11 @@
 import os
 import platform
 
-
 if platform.system() == 'Windows':
     CRED_CONF = os.path.join(os.path.expanduser('~'), 'terraformware.cfg')
 else:
     CRED_CONF = os.path.join(os.environ['HOME'], '.terraformware.conf')
+
 CRED_FILE_CONTENT = """[terraformware]\n
 # Vcenter username (AD user) <string>: your_username
 vsphere_username = your_username\n
@@ -34,9 +34,9 @@ consul_token = xxxxxxxxxxx\n
 def check():
     """ Check config file """
     if not os.access(CRED_CONF, os.W_OK):
-        CRED_FILE = open(CRED_CONF, 'w+')
-        CRED_FILE.write(CRED_FILE_CONTENT)
-        CRED_FILE.close()
+        cred_file = open(CRED_CONF, 'w+')
+        cred_file.write(CRED_FILE_CONTENT)
+        cred_file.close()
         print "\nThe following file has been created: {0}\n".format(CRED_CONF)
         print "Fill it with proper values and run the script again\n"
         os.sys.exit()

@@ -1,13 +1,9 @@
 #!/usr/bin/python
 #
 """
-  esoteric requirements:
-    - infoblox-client (installable through pip)
+  Add, modify or delete Infoblox records
 """
 import os
-import argparse
-import textwrap
-import platform
 import ConfigParser
 import ipaddress
 from infoblox_client import connector
@@ -16,32 +12,7 @@ import iblox_kit.config
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-
-def parse():
-    """ parse arguments """
-
-    intro = """\
-        With this script you can add/replace/destroy A and AAAA record on Infoblox
-        --------------------------------------------------------------------------
-        Adding: iblox_record.py --host foo.bar.com --ipv4 192.168.0.10 --ipv6 2a00:1450:4009:810::2009
-        Removing: iblox_record --host foo.bar.com --destroy
-        Hint: If you add a record, you will implicitly replace any existing entry which is
-              different from the one provided to the script
-         """
-    parser = argparse.ArgumentParser(
-        formatter_class=lambda prog:
-        argparse.RawDescriptionHelpFormatter(prog, max_help_position=33),
-        description=textwrap.dedent(intro),
-        epilog="Author: Massimiliano Adamo <massimiliano.adamo@geant.org>")
-
-    parser.add_argument('--host', help='host name', required=True)
-    parser.add_argument('--network', help='network Internal/External',
-                        choices=['External', 'Internal'], required=True)
-    parser.add_argument('--ipv6', help='IPv6, optional', required=False)
-    parser.add_argument('--ipv4', help='IPv4, mandatory when creating a record', required=False)
-    parser.add_argument('--destroy', help='destroy record', action='store_true')
-
-    return parser.parse_args()
+iblox_kit.config.check()
 
 
 class Iblox(object):
@@ -49,6 +20,7 @@ class Iblox(object):
     config = ConfigParser.RawConfigParser()
 
     def __init__(self, network, record, ipv4, ipv6=None):
+        print '-'*74
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         self.network = network
         self.record = record
@@ -241,28 +213,3 @@ class Iblox(object):
                 self.ipv4, self.record)
 
         print '-'*74
-
-
-if __name__ == '__main__':
-    print '-'*74
-    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-    ARGS = parse()
-
-    if not ARGS.destroy:
-        if not ARGS.ipv4:
-            print " --ipv4 is mandatory when you create a new record"
-            print " You can use --help to check the options"
-            os.sys.exit()
-        else:
-            IPV4 = ARGS.ipv4
-    else:
-        if not ARGS.ipv4:
-            IPV4 = 'blah'
-        else:
-            IPV4 = ARGS.ipv4
-
-    if ARGS.destroy:
-        Iblox(ARGS.network, ARGS.host, IPV4, ARGS.ipv6).destroy()
-    else:
-        Iblox(ARGS.network, ARGS.host, IPV4, ARGS.ipv6).rebuild()
