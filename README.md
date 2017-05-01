@@ -1,5 +1,14 @@
 # Terraform for VMware and Infoblox
 
+## how to use the script
+
+Install the script first: `sudo python setup.py install`
+
+run: `terraformware -h`
+
+The script must be executed within the directory where you have the terraform configuration files
+
+
 This script will:
 
 - render `terraform.j2` and create a terraform file (`main.tf`) using the variables defined in `variables.tf` (this file will vanish when the script ends)
@@ -28,28 +37,3 @@ providers {
     infoblox = "/usr/local/bin/terraform-provider-infoblox"
 }
 ```
-
-## how to use the script
-
-Install the following libraries: 
-
-- `os`
-- `ast`
-- `git` 
-- `glob` 
-- `json` 
-- `argparse` 
-- `ConfigParser`
-- `hcl` (available throuth pip with the name: `pyhcl`)
-- `infoblox-client` (available through pip)
-- `jinja2`
-- `python-terraform`  (available through pip)
-- `requests`
-
-run: `terraformware.py -h`
-
-The script must be executed within the directory with all the terraform configuration files 
-
-## TODO
-- add selection for External/Internal network for Infoblox (for now we've hardcoded External)
-
