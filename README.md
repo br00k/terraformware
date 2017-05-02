@@ -9,11 +9,10 @@ sudo python setup.py install
 terraformware -h
 ```
 
-The first time a configuration file will be created: you need to fill in proper values
+The first time a configuration file will be created: you'll need to fill it with proper values.
 
-check `samples/terraformware.j2` and `samples/variables.tf`
 
-The script must be executed within the directory where you have the terraform configuration files
+The script must be executed within the directory where you have the terraform configuration files: `samples/terraformware.j2` and `samples/variables.tf`
 
 
 The script will sync the status of your servers. In detail it will:
@@ -28,9 +27,9 @@ The script will sync the status of your servers. In detail it will:
 
 Download [terraform](https://www.terraform.io/downloads.html)
 
-The version of your terraform can be checked running: `terraform version` (it will tell you if a newer version is available).
+The version of your terraform can be checked by running: `terraform version` (it will tell you if a newer version is available).
 
-## terraform Infoblox provider (Broken!! API version mismatch with our Infoblox version)
+## terraform Infoblox provider (Broken! API version mismatch with our Infoblox version)
 #### this task is actually carried out through the python API: this section can be ignored
 
 Download [terraform infoblox provider](https://github.com/prudhvitella/terraform-provider-infoblox/releases/)
