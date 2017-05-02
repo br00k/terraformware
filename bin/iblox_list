@@ -3,7 +3,7 @@
 """
   Search for free IPs on Infoblox
 
-  Run it with -h to check all available options: iblox_list -h
+  Run it with -h to check the available options: iblox_list -h
 """
 import argparse
 import textwrap
@@ -14,7 +14,7 @@ def parse():
     """ parse arguments """
 
     intro = """\
-        This will search for free IPs on Infoblox
+        This script will search for free IPs on Infoblox
         ----------------------------------------------------------------
          """
     parser = argparse.ArgumentParser(

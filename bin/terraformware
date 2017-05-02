@@ -3,7 +3,7 @@
 """
   Apply terraform status and set records on Infoblox
 
-  Run it with -h to check all available options: terraformware -h
+  Run it with -h to check the available options: terraformware -h
 
   TODO:
     - add progress to terraform execution

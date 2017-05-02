@@ -3,8 +3,7 @@
 """
   Add/replace/destroy A and AAAA record on Infoblox
 
-  Run it with -h to check all available options: iblox_record -h
-
+  Run it with -h to check the available options: iblox_record -h
 """
 import os
 import argparse
@@ -19,7 +18,7 @@ def parse():
     intro = """\
         With this script you can add/replace/destroy A and AAAA record on Infoblox
         --------------------------------------------------------------------------
-        Adding: iblox_record.py --host foo.bar.com --ipv4 192.168.0.10 --ipv6 2a00:1450:4009:810::2009
+        Adding: iblox_record --host foo.bar.com --ipv4 192.168.0.10 --ipv6 2a00:1450:4009:810::2009
         Removing: iblox_record --host foo.bar.com --destroy
         Hint: If you add a record, you will implicitly replace any existing entry which is
               different from the one provided to the script
@@ -33,8 +32,8 @@ def parse():
     parser.add_argument('--host', help='host name', required=True)
     parser.add_argument('--network', help='network Internal/External',
                         choices=['External', 'Internal'], required=True)
-    parser.add_argument('--ipv6', help='IPv6, optional', required=False)
-    parser.add_argument('--ipv4', help='IPv4, mandatory when creating a record', required=False)
+    parser.add_argument('--ipv6', help='IPv6, optional')
+    parser.add_argument('--ipv4', help='IPv4, mandatory when creating a record')
     parser.add_argument('--destroy', help='destroy record', action='store_true')
 
     return parser.parse_args()

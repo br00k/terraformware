@@ -2,11 +2,11 @@
 
 ## how to use the script
 
-Clone this repo, install the package and run the help:
+Clone this repo, install the package and run it with --help to check the available options:
 ```bash
 git clone gitlab@git.geant.net:terraform/terraformware.git
 sudo python setup.py install
-terraformware -h
+terraformware --help
 ```
 
 The first time a configuration file will be created: you'll need to fill it with proper values.
