@@ -23,7 +23,6 @@ import iblox_kit.config
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-iblox_kit.config.check()
 MODULE_DIR = os.path.basename(os.getcwd())
 
 
@@ -188,6 +187,7 @@ def terraform_run(action, work_dir='.'):
 
 if __name__ == '__main__':
     print '='*80
+    iblox_kit.config.check()
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
     START_TIME = datetime.now()
     TEMPLATE = './terraformware.j2'

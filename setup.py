@@ -19,7 +19,7 @@ setup(
     author_email='massimiliano.adamo@geant.org',
     license='GPL',
     include_package_data=True,
-    scripts=['bin/terraformware'],
+    scripts=glob('bin/*'),
     packages=['iblox_kit'] + [os.path.join("iblox_kit", p) for p in find_packages("iblox_kit")],
     zip_safe=False
     )

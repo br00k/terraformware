@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
-""" check if configuration file is present
-    and create it if missing
+""" check if the configuration file is present
+    and create it if it's missing
 """
 import os
 import platform

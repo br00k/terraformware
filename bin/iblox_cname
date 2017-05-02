@@ -1,0 +1,71 @@
+#!/usr/bin/python
+#
+"""
+  Add/replace/destroy a CNAME on Infoblox
+
+  Run it with -h to check all available options: iblox_cname -h
+"""
+import os
+import argparse
+import textwrap
+from iblox_kit import cname
+import iblox_kit.config
+
+
+def parse():
+    """ parse arguments """
+
+    intro = """\
+        With this script you can add/replace/destroy a CNAME record on Infoblox
+        -----------------------------------------------------------------------
+        Adding: iblox_cname.py --host test-foo01.bar.com --alias foo.bar.com
+        Removing: iblox_cname.py --alias foo.bar.com --destroy
+        Hint: If you add an alias, you will implicitly replace any existing entry which is
+              different from the one provided to the script
+         """
+    parser = argparse.ArgumentParser(
+        formatter_class=lambda prog:
+        argparse.RawDescriptionHelpFormatter(prog, max_help_position=29),
+        description=textwrap.dedent(intro),
+        epilog="Author: Massimiliano Adamo <massimiliano.adamo@geant.org>")
+
+    parser.add_argument('--host', help='existing host name. Mandatory when creating an alias')
+    parser.add_argument('--alias', help='alias to create. Mandatory', required=True)
+    parser.add_argument('--network', help='network Internal/External',
+                        choices=['External', 'Internal'], required=True)
+    parser.add_argument('--destroy', help='destroy alias', action='store_true')
+
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    print '-'*74
+    iblox_kit.config.check()
+    ARGS = parse()
+
+    if not ARGS.destroy:
+        if not ARGS.host:
+            print " --host is mandatory when you create a new record"
+            print " You can use --help to check the options"
+            os.sys.exit()
+        else:
+            HOST = ARGS.host
+    else:
+        if not ARGS.host:
+            HOST = 'blah'
+
+    if ARGS.destroy:
+        cname.Iblox(ARGS.network, HOST, ARGS.alias).destroy()
+    else:
+        ALIAS_LIST = ARGS.alias.split('.')
+        del ALIAS_LIST[0]
+        HOST_LIST = HOST.split('.')
+        del HOST_LIST[0]
+        if HOST_LIST != ALIAS_LIST:
+            print "host and alias must be in the same domain"
+            print "Example: iblox.py --alias foo.bar.com --host prod-foo01.bar.com"
+            print "giving up..."
+            os.sys.exit(1)
+        cname.Iblox(ARGS.network, HOST, ARGS.alias).rebuild()
+
+    print '-'*74

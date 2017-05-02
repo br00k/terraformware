@@ -20,7 +20,6 @@ class Iblox(object):
     config = ConfigParser.RawConfigParser()
 
     def __init__(self, network, record, ipv4, ipv6=None):
-        print '-'*74
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         self.network = network
         self.record = record
@@ -211,5 +210,3 @@ class Iblox(object):
         else:
             print "created/updated PTR Record {} for host {}".format(
                 self.ipv4, self.record)
-
-        print '-'*74
