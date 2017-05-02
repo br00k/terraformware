@@ -3,7 +3,7 @@
 ## how to use the script
 
 Clone this repo, install the package and run the help:
-```sh
+```shell
 git clone gitlab@git.geant.net:terraform/terraformware.git
 sudo python setup.py install
 terraformware -h
