@@ -3,7 +3,7 @@
 ## how to use the script
 
 Clone this repo, install the package and run the help:
-```shell
+```bash
 git clone gitlab@git.geant.net:terraform/terraformware.git
 sudo python setup.py install
 terraformware -h
@@ -39,7 +39,7 @@ Copy the binary somewhere, for instance  `/usr/local/bin/terraform-provider-info
 
 create the file `~/.terraformrc` with following content:
 
-```
+```go
 providers {
     infoblox = "/usr/local/bin/terraform-provider-infoblox"
 }
@@ -48,7 +48,7 @@ providers {
 ## Config samples
 
 ### variables.tf
-```hcl
+```go
 # Variables
 #
 variable "instances" {
