@@ -12,7 +12,7 @@ terraformware -h
 The first time a configuration file will be created: you'll need to fill it with proper values.
 
 
-The script must be executed within the directory where you have the terraform configuration files: `samples/terraformware.j2` and `samples/variables.tf`
+The script must be executed within the directory where you have the terraform configuration files: `terraformware.j2` and `variables.tf`
 
 
 The script will sync the status of your servers. In detail it will:
