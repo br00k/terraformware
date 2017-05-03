@@ -1,0 +1,49 @@
+#!/usr/bin/python
+#
+"""
+  Search for free IPs on Infoblox
+
+  Run it with -h to check the available options: iblox_list -h
+"""
+import argparse
+import textwrap
+from iblox_kit import dig_v4
+
+
+def parse():
+    """ parse arguments """
+
+    intro = """\
+        This script search for free IPs on a given range on Infoblox
+        ----------------------------------------------------------------
+         """
+    parser = argparse.ArgumentParser(
+        formatter_class=lambda prog:
+        argparse.RawDescriptionHelpFormatter(prog, max_help_position=29),
+        description=textwrap.dedent(intro),
+        epilog="Author: Massimiliano Adamo <massimiliano.adamo@geant.org>")
+
+    parser.add_argument('--ipv4', help='search free IP v4', action='store_true')
+    parser.add_argument('--prefix', help='net prefix. Defaults to 62.40.', default='62.40.')
+    parser.add_argument('--start', type=int, help='search from. Defaults to 96', default='96')
+    parser.add_argument('--end', type=int, help='search up to. Defaults to 128', default='128')
+
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    ARGS = parse()
+
+    prefix_list = list(ARGS.prefix)
+    _null = [prefix_list.append('.') for s in prefix_list if prefix_list[-1] != '.']
+    prefix = "".join(prefix_list)
+
+    from_net = "{}{}.0".format(prefix, ARGS.start)
+    to_net = "{}{}.0".format(prefix, ARGS.end)
+
+    print "searching free IPs v4 on networks between {} and {}".format(from_net, to_net)
+    print '-'*80
+
+    dig_v4.ipv4(prefix, ARGS.start, ARGS.end)
+
+    print '-'*80

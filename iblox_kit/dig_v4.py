@@ -13,10 +13,9 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 iblox_kit.config.check()
 
 
-def ipv4(start=96, end=128):
-    """ span IPv4 from 62.40.96.1 to 62.40.127.254 """
+def ipv4(net_prefix, start, end):
+    """ span IPv4 within provided range """
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-    net_prefix = '62.40.'
     config = ConfigParser.RawConfigParser()
     config.readfp(open(iblox_kit.config.CRED_CONF))
     opts = {

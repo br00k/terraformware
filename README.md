@@ -2,10 +2,22 @@
 
 ## how to use the script
 
-Clone this repo, install the package and run it with --help to check the available options:
-```bash
+Clone the repository:
+```sh
 git clone gitlab@git.geant.net:terraform/terraformware.git
-sudo python setup.py install
+```
+
+Install the package:
+```sh
+python setup.py sdist
+sudo pip install dist/terraformware-XXX.tar.gz
+```
+
+AVOID the installation through setup.py: `sudo python setup.py install`
+
+
+and run it with --help to check the available options:
+```sh
 terraformware --help
 ```
 
