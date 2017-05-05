@@ -56,9 +56,6 @@ available).
 why not terraform Infoblox provider?
 ------------------------------------
 
-it does not work with every API version (did not work for me)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 -  it does not work with every version of the API (did not work for me)
 -  it's not an official Terraform plugin and you need to compile it
    against your terraform
