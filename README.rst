@@ -42,6 +42,8 @@ The script will sync the status of your servers. In detail it will:
 
 -  run terraform
 
+-  in addition, you can create CNAME and query Infoblox for free IP
+
 terraform
 ---------
 
@@ -51,25 +53,17 @@ The version of your terraform can be checked by running:
 ``terraform version`` (it will tell you if a newer version is
 available).
 
-terraform Infoblox provider (Broken! API version mismatch with our Infoblox version)
-------------------------------------------------------------------------------------
+why not terraform Infoblox provider?
+------------------------------------
 
-this task is actually carried out through the python API: this section can be ignored
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+it does not work with every API version (did not work for me)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Download `terraform infoblox
-provider <https://github.com/prudhvitella/terraform-provider-infoblox/releases/>`__
-
-Copy the binary somewhere, for instance
-``/usr/local/bin/terraform-provider-infoblox``
-
-create the file ``~/.terraformrc`` with following content:
-
-.. code:: go
-
-    providers {
-        infoblox = "/usr/local/bin/terraform-provider-infoblox"
-    }
+-  it does not work with every version of the API (did not work for me)
+-  it's not an official Terraform plugin and you need to compile it
+   against your terraform
+-  this scripts offer few more features, such as CNAME and search for
+   free IP records.
 
 Config samples
 --------------
