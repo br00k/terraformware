@@ -17,9 +17,6 @@ Install the package:
     python setup.py sdist
     sudo pip install dist/terraformware-XXX.tar.gz
 
-AVOID the installation through setup.py:
-``sudo python setup.py install``
-
 and run it with --help to check the available options:
 
 .. code:: sh
@@ -62,7 +59,7 @@ why not terraform Infoblox provider?
 -  this scripts offer few more features, such as CNAME and search for
    free IP records.
 
-Config samples
+config samples
 --------------
 
 variables.tf

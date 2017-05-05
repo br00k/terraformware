@@ -13,9 +13,6 @@ python setup.py sdist
 sudo pip install dist/terraformware-XXX.tar.gz
 ```
 
-AVOID the installation through setup.py: `sudo python setup.py install`
-
-
 and run it with --help to check the available options:
 ```sh
 terraformware --help
@@ -43,13 +40,13 @@ Download [terraform](https://www.terraform.io/downloads.html)
 
 The version of your terraform can be checked by running: `terraform version` (it will tell you if a newer version is available).
 
-## why not terraform Infoblox provider? 
+## why not terraform Infoblox provider?
 
 - it does not work with every version of the API (did not work for me)
 - it's not an official Terraform plugin and you need to compile it against your terraform
-- this scripts offer few more features, such as CNAME and search for free IP records. 
+- this scripts offer few more features, such as CNAME and search for free IP records.
 
-## Config samples
+## config samples
 
 ### variables.tf
 ```go
