@@ -1,8 +1,0 @@
-pyhcl
-infoblox-client
-python-terraform
-ast
-requests
-configparser
-jinja2
-argparse

@@ -11,10 +11,19 @@ def read(fname):
 
 setup(
     name='terraformware',
-    version='0.9.1',
+    version='0.9.2',
     description=("Tool for managing server status on Terraform and Infoblox"),
     long_description="long description: cf. http://stackoverflow.com/a/761847",
     url='https://git.geant.net/gitlab/terraform/terraformware',
+    install_requires=[
+        'pyhcl',
+        'infoblox-client',
+        'python-terraform',
+        'ast',
+        'requests',
+        'configparser',
+        'jinja2'
+        ],
     author='Massimiliano Adamo',
     author_email='massimiliano.adamo@geant.org',
     license='GPL',
