@@ -16,7 +16,7 @@ CRED_FILE_CONTENT = """[terraformware]\n
 vsphere_username = your_username\n
 # Vcenter password (AD password) <string>: your_password
 vsphere_password = your_secret_pass_here\n
-# VSphere server
+# VSphere server <string>: vsphere server fqdn
 vsphere_server = chvc01.domain.com\n
 # Infoblox username <string>: your_username
 iblox_username = your_username\n
@@ -25,7 +25,7 @@ iblox_password = your_secret_pass_here\n
 # Infoblox server <string>: infblox server fqdn
 iblox_server = infoblox.domain.com\n
 # Consul server:port <string>: consul server fqdn:port
-consul_server = puppet01.domain.com:8500\n
+consul_server = consul01.domain.com:8500\n
 # Consul access token <string>: consul secret
 consul_token = xxxxxxxxxxx\n
 """
