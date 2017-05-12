@@ -4,13 +4,7 @@ Terraform for VMware and Infoblox
 how to use the script
 ---------------------
 
-Clone the repository:
-
-.. code:: sh
-
-    git clone gitlab@git.geant.net:terraform/terraformware.git
-
-Install the package:
+Clone the repository and install the package:
 
 .. code:: sh
 
@@ -80,8 +74,8 @@ variables.tf
         vsphere_server = "chvc01.win.dante.org.uk"
         datacenter = "CityHouse"
         datastore = "datastore1"
-        puppet_server = "puppet01.geant.net"
-        puppet_ca = "puppet01.geant.net"
+        puppet_server = "puppet01.domain.com"
+        puppet_ca = "puppet01.domain.com"
         puppet_conf = "/etc/puppetlabs/puppet/puppet.conf"
         template = "packer-centos-6"
       }
@@ -95,8 +89,8 @@ variables.tf
     variable "_1" {
       type = "map"
       default = {
-        hostname = "test-terraform01.geant.net"
-        domain = "geant.net"
+        hostname = "test-terraform01.domain.com"
+        domain = "domain.com"
         net_label = "GEANT"
         ipv4_address = "192.168.1.200"
         ipv4_gateway = "192.168.1.1"
@@ -113,8 +107,8 @@ variables.tf
     variable "_2" {
       type = "map"
       default = {
-        hostname = "uat-terraform01.geant.net"
-        domain = "geant.net"
+        hostname = "uat-terraform01.domain.com"
+        domain = "domain.com"
         net_label = "GEANT"
         ipv4_address = "192.168.1.201"
         ipv4_gateway = "192.168.1.1"
@@ -131,8 +125,8 @@ variables.tf
     variable "_3" {
       type = "map"
       default = {
-        hostname = "prod-terraform01.geant.net"
-        domain = "geant.net"
+        hostname = "prod-terraform01.domain.com"
+        domain = "domain.com"
         net_label = "GEANT"
         ipv4_address = "192.168.1.202"
         ipv4_gateway = "192.168.1.1"

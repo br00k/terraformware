@@ -25,7 +25,7 @@ iblox_password = your_secret_pass_here\n
 # Infoblox server <string>: infblox server fqdn
 iblox_server = infoblox.win.dante.org.uk\n
 # Consul server:port <string>: consul server fqdn:port
-consul_server = puppet01.geant.net:8500\n
+consul_server = puppet01.domain.com:8500\n
 # Consul access token <string>: consul secret
 consul_token = xxxxxxxxxxx\n
 """
