@@ -9,8 +9,10 @@
     - add progress to terraform execution
 """
 import os
+import re
 import ast
 import json
+import tempfile
 import argparse
 import ConfigParser
 from datetime import datetime
@@ -116,20 +118,26 @@ def git_commit():
 
 
 def load_variables(filenames, terrafile='./variables.tf'):
-    """ load terraform variables
-    # temporary stuff
+    """ load terraform variables """
+    tmp_tfile = tempfile.NamedTemporaryFile(delete=False, suffix='.tf',
+                                            prefix='tmp_tfile')
+    tmp_tname = tmp_tfile.name
+
+    # prepend underscore to number in the string: variable "1" {
     var_match = re.compile('^variable "[0-9]+"')
     with open(terrafile) as terrastream:
         stream_data = terrastream.readlines()
     for terraline in stream_data:
         if var_match.match(terraline):
             new_line = re.sub(r'^variable "', r'^variable "_', terraline)
-            myfile[stream_data.index(terraline)] = new_line
-    """
+            stream_data[stream_data.index(terraline)] = new_line
+
+    _ = [tmp_tfile.write(s) for s in stream_data]
+    tmp_tfile.close()
 
     variables = {}
 
-    with open(terrafile) as data_fh:
+    with open(tmp_tfile.name) as data_fh:
         data = hcl.load(data_fh)
         for key, value in data.get('variable', {}).iteritems():
             if 'default' in value:
@@ -140,6 +148,7 @@ def load_variables(filenames, terrafile='./variables.tf'):
             data = hcl.load(var_fh)
             variables.update(data)
 
+    os.unlink(tmp_tfile.name)
     return variables
 
 

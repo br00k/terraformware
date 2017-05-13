@@ -11,7 +11,7 @@ def read(fname):
 
 setup(
     name='terraformware',
-    version='0.9.2',
+    version='0.9.3',
     description=("Tool for managing server status on Terraform and Infoblox"),
     long_description="long description: cf. http://stackoverflow.com/a/761847",
     url='https://github.com/maxadamo/terraformware',
