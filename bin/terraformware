@@ -116,7 +116,16 @@ def git_commit():
 
 
 def load_variables(filenames, terrafile='./variables.tf'):
-    """ load terraform variables """
+    """ load terraform variables
+    # temporary stuff
+    var_match = re.compile('^variable "[0-9]+"')
+    with open(terrafile) as terrastream:
+        stream_data = terrastream.readlines()
+    for terraline in stream_data:
+        if var_match.match(terraline):
+            new_line = re.sub(r'^variable "', r'^variable "_', terraline)
+            myfile[stream_data.index(terraline)] = new_line
+    """
 
     variables = {}
 
