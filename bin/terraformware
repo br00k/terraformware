@@ -230,38 +230,38 @@ if __name__ == '__main__':
         IBLOX_VARS = ast.literal_eval(json.dumps(CONTEXT))
         INSTANCES = IBLOX_VARS['instances']
 
-    # Check if there is a global network defined
-    try:
-        NETWORK = IBLOX_VARS['common']['network']
-    except KeyError:
-        NETWORK = None
+        # Check if there is a global network defined
+        try:
+            NETWORK = IBLOX_VARS['common']['network']
+        except KeyError:
+            NETWORK = None
 
-    for virtual_machine in range(1, int(INSTANCES) + 1):
-        inst = "_{}".format(virtual_machine)
-        ipv4_addr = IBLOX_VARS[inst]['ipv4_address']
-        ipv6_addr = IBLOX_VARS[inst]['ipv6_address']
-        host_name = IBLOX_VARS[inst]['hostname']
-        if not NETWORK:
-            try:
-                NETWORK = IBLOX_VARS[inst]['network']
-            except KeyError:
-                print "network not defined: please choose either External, Internal"
-                byebye(1)
+        for virtual_machine in range(1, int(INSTANCES) + 1):
+            inst = "_{}".format(virtual_machine)
+            ipv4_addr = IBLOX_VARS[inst]['ipv4_address']
+            ipv6_addr = IBLOX_VARS[inst]['ipv6_address']
+            host_name = IBLOX_VARS[inst]['hostname']
+            if not NETWORK:
+                try:
+                    NETWORK = IBLOX_VARS[inst]['network']
+                except KeyError:
+                    print "network not defined: please choose either External, Internal"
+                    byebye(1)
+            if ARGS.destroy:
+                record.Iblox(NETWORK, host_name, ipv4_addr).destroy()
+            else:
+                record.Iblox(NETWORK, host_name, ipv4_addr, ipv6_addr).rebuild()
+
         if ARGS.destroy:
-            record.Iblox(NETWORK, host_name, ipv4_addr).destroy()
-        else:
-            record.Iblox(NETWORK, host_name, ipv4_addr, ipv6_addr).rebuild()
-
-    if ARGS.destroy:
-        terraform_run('destroy')
-        git_commit()
-    elif ARGS.init:
-        terraform_run('init')
-    elif ARGS.plan:
-        terraform_run('plan')
-    elif ARGS.apply:
-        terraform_run('apply')
-        git_commit()
+            terraform_run('destroy')
+            git_commit()
+        elif ARGS.init:
+            terraform_run('init')
+        elif ARGS.plan:
+            terraform_run('plan')
+        elif ARGS.apply:
+            terraform_run('apply')
+            git_commit()
 
     SPENT = (datetime.now() - START_TIME).seconds
     print "======== Script processed in {} seconds ========\n".format(SPENT)
