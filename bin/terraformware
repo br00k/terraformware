@@ -129,7 +129,7 @@ def load_variables(filenames, terrafile='./variables.tf'):
         stream_data = terrastream.readlines()
     for terraline in stream_data:
         if var_match.match(terraline):
-            new_line = re.sub(r'^variable "', r'^variable "_', terraline)
+            new_line = re.sub(r'^variable "', r'variable "_', terraline)
             stream_data[stream_data.index(terraline)] = new_line
 
     _ = [tmp_tfile.write(s) for s in stream_data]
